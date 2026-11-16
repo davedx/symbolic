@@ -201,6 +201,8 @@ def test_budget_accounting_and_outputs(tmp_path):
     assert rows[-1]["tokens"] <= t.c.tokens
     assert all(k in rows[0] for k in ("loss", "tokens", "kb_facts_seen", "queries_seen", "wall_time"))
     assert "test_length" in res["accuracy"]
+    assert 0.0 <= res["kb_recall"]["all"]["acc"] <= 1.0 and res["kb_recall"]["all"]["n"] > 0
+    assert not any(k == "prop" for k in res["kb_recall"])  # boolean statements are excluded
     # rerunning a finished run is a no-op
     assert Trainer(cfg, runs_dir=tmp_path).train(verbose=False) == res
 

@@ -417,3 +417,55 @@ resumes; log rows written after that checkpoint are dropped, and that part is re
 - `label_shuffle`: train answers are permuted within each (form, answer kind), so the
   answer marginals are preserved.
 - `train_subset`: train on only N queries (used by the overfit check).
+
+**Storage diagnostic** (`kb_recall` in `results.json`): cloze accuracy on the last name
+slot of 4,000 KB facts:
+- for relations, the object; for `isa` / `sub`, the parent; for categorical
+  statements, the value;
+- boolean property statements are skipped (their last name is the property, which is
+  ambiguous).
+
+This separates "the fact is not stored" from "the fact is stored but queries cannot
+retrieve it".
+
+### Pre-run checks (M1 Pro, size S)
+
+| check | prose | symbolic | triples |
+|---|---|---|---|
+| overfit 200 queries (train acc, 1.5M tokens) | 1.000 ✅ | 1.000 ✅ | 1.000 ✅ |
+| shuffled labels: test_iid / combo / length / category | .373 / .275 / .393 / .140 ✅ | .385 / .288 / .376 / .151 ✅ | .396 / .296 / .429 / .150 ✅ |
+| same budget, true labels | .595 / .386 / .453 / .168 | .597 / .403 / .423 / .084 | .560 / .375 / .412 / .118 |
+
+The majority-class baseline is .397 / .298 / .423 / .151. With shuffled labels every
+test split stays within 5 points of it. The shuffled-check runs use 8M tokens; their
+outputs are in `runs/checks/`.
+
+### Pilot findings (size S, symbolic; `runs/pilot/`)
+
+**Facts-in-weights, 60M tokens (16 min on the M1).**
+- Train accuracy reaches 1.0 by about 20M tokens.
+- Held-out accuracy plateaus early:
+  - test_iid 0.71, held-out combo 0.47, length 0.41, held-out category 0.12;
+  - inherited properties generalize (0.94 on both test_iid and combo);
+  - entity-level facts mostly do not: held-out combo relation 0.03, direct 0.58
+    (chance ≈ 0.5).
+- KB recall is 1.00 for relation and taxonomy facts. So the facts are **stored but
+  not extractable** by queries that were never trained. Even 1-hop held-out-combo
+  relation queries score 12/80. The same pattern shows for all three encodings in the
+  8M-token runs. This is the knowledge-storage-vs-extraction gap described in the
+  literature, and it is exactly where the encodings (e.g. prose paraphrase
+  augmentation) might differ at larger scale.
+
+**Facts-in-context, 30M tokens (5.5 min).**
+- Still improving at the end of the budget: test_iid 0.73, train 0.77.
+- Transitive queries are near-perfect and **length-generalize**: 4–6 hops at ≈1.0,
+  although training only goes to 3.
+- Entity-valued chains are near 0, even on train. The context holds confusable
+  distractors (same subject, different relation), so a 1-hop chain needs a two-key
+  lookup that S has not acquired in 30M tokens.
+
+**Implications for the grid.**
+- 20M tokens is too little; budgets of ≥100M tokens per run look necessary.
+- M and L may show phase transitions that S does not.
+- Recommended: run `train.bench` on the Mac Studio first, then a short M/L pilot at
+  100–200M tokens, before fixing the grid budget.

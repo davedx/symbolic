@@ -30,13 +30,14 @@ from pathlib import Path
 import mlx.core as mx
 import mlx.nn as nn
 import mlx.optimizers as optim
+import numpy as np
 from mlx.utils import tree_flatten, tree_unflatten
 
 from encoders.dataset import make_encoder
 
 from .config import RunConfig
 from .data import StreamState, TrainStream, load_dataset, train_queries
-from .evaluate import Evaluator, eval_sets, summarize
+from .evaluate import EVAL_SEED, Evaluator, eval_sets, kb_recall, summarize
 from .model import Transformer, count_params
 
 
@@ -293,9 +294,14 @@ class Trainer:
         with open(self.run_dir / "predictions.jsonl", "w") as f:
             for r in rows:
                 f.write(json.dumps(r) + "\n")
+        facts = self.ds.world.facts
+        rng = np.random.default_rng(EVAL_SEED)
+        sample = [facts[i] for i in sorted(rng.choice(len(facts), size=min(4000, len(facts)), replace=False))]
         results = {
             "run_id": self.cfg.resolved_run_id(),
             "accuracy": summarize(rows),
+            # storage diagnostic: cloze recall of KB facts (meaningful for the weights regime)
+            "kb_recall": kb_recall(self.model, self.enc, sample, self.cfg.train.eval_batch_size),
             "counters": asdict(self.c),
             "n_params": count_params(self.model),
         }
@@ -316,5 +322,5 @@ class Trainer:
         (self.run_dir / "results.json").write_text(json.dumps(results, indent=1))
         if verbose:
             top = {k: round(v["acc"], 3) for k, v in results["accuracy"].items() if "/" not in k}
-            print(f"final: {top}")
+            print(f"final: {top}  kb_recall: {results['kb_recall']['all']['acc']:.3f}")
         return results

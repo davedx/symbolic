@@ -154,3 +154,47 @@ def summarize(rows: list[dict]) -> dict:
     for key, (c, n) in sorted(acc.items(), key=lambda kv: tuple(map(str, kv[0]))):
         out["/".join(map(str, key))] = {"acc": c / n, "n": n}
     return out
+
+
+def kb_recall(model: Transformer, enc: Encoder, facts: list[tuple], batch_size: int = 256) -> dict:
+    """Storage diagnostic (facts-in-weights): cloze the *last slot* of each KB fact.
+
+    Each fact is rendered with variant 0 as a KB document of one fact; the prompt is
+    everything before the fact's last name token, and the target is that token (the
+    object of a relation, the parent of a sub/isa edge, the value of a categorical
+    statement; boolean property statements are skipped because their last
+    name is the property itself). Accuracy per fact kind tells whether the KB is stored at all,
+    separately from whether queries can retrieve it.
+    """
+    from encoders.base import BOS
+
+    names = set(enc.world.lexicon.values())
+    pad = enc.vocab.pad_id
+    items = []
+    for f in facts:
+        toks = [BOS] + enc.fact(f, 0)
+        last = max(i for i, t in enumerate(toks) if t in names)
+        if f[0] == "prop":
+            if enc.world.properties[f[2]]["kind"] != "categorical":
+                continue  # a boolean statement's last name is its property: not a well-posed cloze
+            kind = "prop:categorical"
+        else:
+            kind = f[0] if f[0] != "rel" else f"rel:{enc.world.relations[f[1]]['kind']}"
+        items.append((enc.vocab.encode(toks[:last]), enc.vocab.index[toks[last]], kind))
+    hits: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+    order = sorted(range(len(items)), key=lambda i: len(items[i][0]))
+    for s in range(0, len(order), batch_size):
+        idx = order[s : s + batch_size]
+        T = max(len(items[i][0]) for i in idx)
+        arr = np.full((len(idx), T), pad, dtype=np.int32)
+        for j, i in enumerate(idx):
+            arr[j, : len(items[i][0])] = items[i][0]
+        logits = model(mx.array(arr))
+        last = mx.array([len(items[i][0]) - 1 for i in idx])
+        am = np.array(mx.argmax(logits[mx.arange(len(idx)), last], axis=-1))
+        for j, i in enumerate(idx):
+            ok = int(am[j]) == items[i][1]
+            for key in ("all", items[i][2]):
+                hits[key][0] += ok
+                hits[key][1] += 1
+    return {k: {"acc": c / n, "n": n} for k, (c, n) in sorted(hits.items())}
