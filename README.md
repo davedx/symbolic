@@ -5,7 +5,7 @@ graph triples, later continuous binding vectors) change (1) sample efficiency an
 compositional / multi-hop generalization and (2) the geometry of internal
 representations? See `semantic-representations-prototype-prompt.md` for the full brief.
 
-Status: **Phase 1 (synthetic world + oracle + splits) done.** Phases 2–5 to follow.
+Status: **Phase 1 (synthetic world + oracle + splits) and Phase 2 (encoders) done.** Phases 3–5 to follow.
 
 ## Quick start
 
@@ -13,6 +13,7 @@ Status: **Phase 1 (synthetic world + oracle + splits) done.** Phases 2–5 to fo
 uv sync                                    # Python 3.12, mlx, numpy, pytest, ...
 uv run pytest                              # full test suite (~3 s)
 uv run python -m world.build --config configs/world/default.yaml   # -> data/world_default/
+uv run python -m encoders.report --data data/world_default         # encoding stats + side-by-side samples
 ```
 
 `world.build` writes `world.json` (KB + lexicon), `queries.jsonl` (every query with its
@@ -32,8 +33,14 @@ world/      config.py     dataclass config, loaded from YAML (unknown keys rejec
             queries.py    Query object, query pool construction
             splits.py     held-out selection and split routing
             build.py      CLI, Dataset save/load, stats
+encoders/   base.py       template engine (render + parse from one table), Vocab, fact/query kinds
+            prose.py      A: templated English, 3 paraphrases per fact/query kind
+            symbolic.py   B: typed S-expressions
+            triples.py    C: <s> <r> <o> edges, queries as triple patterns
+            dataset.py    common example format, regimes, context sampling, proof targets
+            report.py     vocab size, tokens per fact/query, samples
 configs/world/  default.yaml (1000 entities), tiny.yaml (120 entities, for tests)
-tests/          test_world.py, test_oracle.py, test_splits.py
+tests/          test_world.py, test_oracle.py, test_splits.py, test_encoders.py
 ```
 
 ## The world
@@ -207,7 +214,7 @@ Phase 4 (majority per task type, lookup table) control for imbalance.
 
 ## Tests
 
-`uv run pytest`: 107 tests on the tiny and the default world.
+`uv run pytest`: 173 tests on the tiny and the default world.
 - **Determinism**: same seed gives byte-identical output, a different seed gives a
   different world, save/load round-trips, and RNG streams are independent.
 - **Names**: unique, follow the grammar, not dictionary words.
@@ -221,6 +228,91 @@ Phase 4 (majority per task type, lookup table) control for imbalance.
   case) with hand-checked answers.
 - **Splits**: no leakage, derivability and coverage, as listed above.
 
+- **Encoders**:
+  - text, tokens and ids round-trip, and every rendering parses back to exactly one
+    fact or query, for every variant (all facts and queries of the tiny world, and a
+    4,000-item sample of the default world);
+  - all three encodings decode to the same answer;
+  - golden renderings on the mini world;
+  - vocabulary covers the corpus with no dead template words, and names never
+    collide with template words;
+  - example layout and loss masks are correct for every regime and proof mode;
+  - KB documents segment back into exactly the KB;
+  - each facts-in-context example contains the proof facts and the overridden
+    default, and the independent reasoner, given only that context, derives the
+    gold answer.
+
 The suite was mutation-checked by injecting six bugs: oracle ignores overrides,
 wrong symmetric step, split leakage, incomplete chain touches, off-by-one isa hops,
 redundant exceptions. Each one makes at least two tests fail.
+Phase 2 had a separate set of six injected bugs: an ambiguous template, swapped
+relation arguments, a context missing the overridden default, broken tokenization,
+false distractor facts, and a malformed proof layout. Each one fails at least one test.
+
+## Encodings (Phase 2)
+
+All three render the *same* facts and queries. Each encoding is a table of templates
+with typed slots, and one table drives both rendering and parsing, so every encoding
+is invertible. The tests check that every rendering parses back to exactly one
+fact or query.
+
+| | prose (A) | symbolic (B) | triples (C) |
+|---|---|---|---|
+| fact | `no foglupon is flurbror.` | `(not (has foglupon flurbror))` | `<s> foglupon <r> flurbror <o> false` |
+| fact | `the skulka of plufek is resdre.` | `(skulka plufek resdre)` | `<s> plufek <r> skulka <o> resdre` |
+| query | `what is the r2 of the r1 of rex?` | `? (r2 (r1 rex))` | `<q> <s> rex <r> r1 <o> ?x1 <s> ?x1 <r> r2 <o> ?` |
+| answer | `yes` / `no` / name | `true` / `false` / name | `true` / `false` / name |
+| templates (fact / query kinds) | 30 / 15 | 7 / 5 | 7 / 5 |
+| vocab size | 1,258 | 1,220 | 1,223 |
+| mean tokens per fact | 6.50 | 5.44 | 6.00 |
+| mean tokens per query | 7.97 | 7.21 | 9.76 |
+| mean tokens, chain query | 14.51 | 11.58 | 20.15 |
+| KB tokens per epoch | 89,256 | 75,159 | 82,664 |
+| query example, facts-in-weights | 12.9 | 12.2 | 14.6 |
+| query example, facts-in-context | 74.0 | 61.2 | 70.1 |
+
+(Default world. `encoders.report` writes these numbers to `data/<world>/encoding_stats.json`.)
+
+**Design decisions.**
+
+- **Word-level tokens; every name is one token in every encoding.**
+  - The encodings therefore differ in *structure*, not in how symbols are segmented.
+  - Consequence: prose is only about 20% longer per fact than symbolic. Budget
+    matching in Phase 3 still handles this (equal tokens vs equal facts).
+  - A BPE tokenizer would split nonsense names into subwords. That is a second
+    manipulation, which can be added later as its own encoding.
+- **Symbolic** keeps types explicit through its heads: `isa`, `sub`, `has`, `not`,
+  `val`, plus one head per relation. Chains are nested functional terms.
+- **Triples** is uniform: entities and categories are untyped nodes, booleans are the
+  nodes `true` / `false`, and chains are conjunctive patterns with join variables.
+- **Prose paraphrases (3 per kind)** include object-first phrasings, e.g. `y is the r
+  of x` and `v is the A of e`. So prose sees relation facts in both word orders, while
+  symbolic and triples are always subject-first. This is a real property of natural
+  language, but it may help reverse lookups (symmetric and inverse relations) in the
+  facts-in-weights regime. Treat it as a known confound when interpreting results.
+- **Paraphrase sampling.**
+  - Training items get a new template each epoch (`paraphrase: resample`).
+  - Evaluation uses epoch 0, which gives a fixed but varied template per query (a
+    stable hash of the qid).
+  - Every template is seen in training; no template is held out.
+- **Common example format.** The special tokens are shared; each encoding has its own
+  vocabulary.
+  ```
+  <|bos|> [<|ctx|> facts…] <|query|> query <|ans|> answer <|eos|>
+  ```
+  Loss is on the answer and `<|eos|>`. Answers are a single token in every encoding.
+- **Proof as target** (`proof: none | after | before`, default `none`):
+  - `after` is an auxiliary target that comes after the answer;
+  - `before` is a scratchpad: the model writes the proof facts, then `<|ans|>`, then
+    the answer.
+- **Facts-in-weights.**
+  - The KB is shuffled each epoch and split into documents of 16 facts, with loss on
+    every token. The paraphrase is resampled per epoch.
+  - The query phase has no context. Scheduling and mixing are Phase 3 decisions.
+- **Facts-in-context.**
+  - Context = the proof facts + the overridden default (so exception queries contain
+    the conflicting general rule) + 6 distractors, shuffled.
+  - Half of the distractors share a node with the needed facts; the rest are random
+    KB facts.
+  - Tested: the independent reasoner, run on the context alone, reproduces every
+    answer.

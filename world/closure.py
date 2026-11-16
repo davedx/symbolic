@@ -46,7 +46,7 @@ class Closure:
             values[c] = inherited
         leaf = {f[1]: f[2] for f in facts if f[0] == "isa"}
         for e in world.entities:
-            v = dict(values[leaf[e]])
+            v = dict(values[leaf[e]]) if e in leaf else {}  # tolerate partial KBs (context subsets)
             v.update({p: val for (n, p), val in stated.items() if n == e})
             values[e] = v
         self.values = values
