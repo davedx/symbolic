@@ -1,0 +1,20 @@
+[project]
+name = "symbolic"
+version = "0.1.0"
+description = "Representations of meaning: does the encoding of knowledge change generalization and latent geometry?"
+requires-python = ">=3.11"
+dependencies = [
+    "mlx",
+    "numpy",
+    "pytest",
+    "pyyaml",
+    "scikit-learn",
+    "matplotlib",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

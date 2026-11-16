@@ -1,0 +1,30 @@
+# Small world for fast tests and smoke runs.
+seed: 0
+n_entities: 120
+taxonomy:
+  target_categories: 16
+  tolerance: 3
+  n_top: 2
+  max_depth: 4
+  min_leaf_depth: 3
+  branching: [2, 2]
+  p_leaf: 0.4
+  min_entities_per_leaf: 3
+properties:
+  n_inherited_bool: 12
+  n_categorical: 3
+  n_individual: 5
+  individual_per_entity: 2
+  category_exception_rate: 0.15
+  entity_exception_rate: 0.05
+relations:
+  n_functional: 2
+  transitive_group_size: 20
+queries:
+  chain_per_hop: 200
+  trans_per_hop: 100
+splits:
+  combo_entity_fraction: 0.15
+  combo_predicate_fraction: 0.25
+  n_heldout_category_relations: 2
+  n_heldout_category_properties: 2
