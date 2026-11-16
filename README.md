@@ -5,7 +5,7 @@ graph triples, later continuous binding vectors) change (1) sample efficiency an
 compositional / multi-hop generalization and (2) the geometry of internal
 representations? See `semantic-representations-prototype-prompt.md` for the full brief.
 
-Status: **Phase 1 (synthetic world + oracle + splits) and Phase 2 (encoders) done.** Phases 3–5 to follow.
+Status: **Phases 1 (world), 2 (encoders) and 3 (MLX training) done.** Phases 4–5 to follow.
 
 ## Quick start
 
@@ -14,6 +14,11 @@ uv sync                                    # Python 3.12, mlx, numpy, pytest, ..
 uv run pytest                              # full test suite (~3 s)
 uv run python -m world.build --config configs/world/default.yaml   # -> data/world_default/
 uv run python -m encoders.report --data data/world_default         # encoding stats + side-by-side samples
+uv run python -m train.run configs/runs/smoke.yaml                 # whole pipeline on the tiny world (~10 s)
+uv run python -m train.run configs/runs/base.yaml data.encoding=prose model.size=M train.seed=1
+uv run python -m train.checks overfit                              # pre-run check 1
+uv run python -m train.checks shuffled                             # pre-run check 2
+uv run python -m train.bench                                       # tokens/sec per size + grid wall-time estimate
 ```
 
 `world.build` writes `world.json` (KB + lexicon), `queries.jsonl` (every query with its
@@ -39,8 +44,17 @@ encoders/   base.py       template engine (render + parse from one table), Vocab
             triples.py    C: <s> <r> <o> edges, queries as triple patterns
             dataset.py    common example format, regimes, context sampling, proof targets
             report.py     vocab size, tokens per fact/query, samples
+train/      model.py      MLX decoder-only transformer (pre-LN, RoPE, SwiGLU/GELU, tied embeddings)
+            config.py     RunConfig = world + data + model + train sections (YAML + dotted overrides)
+            data.py       deterministic, resumable batch stream; regimes; controls
+            evaluate.py   exact-match eval (single forward pass, or greedy decoding for proof=before)
+            trainer.py    AdamW + warmup/cosine, grad clipping, compiled step, checkpoint/resume, logs
+            run.py        CLI for one run
+            checks.py     overfit and shuffled-label checks
+            bench.py      throughput benchmark + wall-time estimate
+configs/runs/   base.yaml (default run), smoke.yaml (tiny world, XS model)
 configs/world/  default.yaml (1000 entities), tiny.yaml (120 entities, for tests)
-tests/          test_world.py, test_oracle.py, test_splits.py, test_encoders.py
+tests/          test_world.py, test_oracle.py, test_splits.py, test_encoders.py, test_train.py
 ```
 
 ## The world
@@ -214,7 +228,7 @@ Phase 4 (majority per task type, lookup table) control for imbalance.
 
 ## Tests
 
-`uv run pytest`: 173 tests on the tiny and the default world.
+`uv run pytest`: 193 tests (~20 s).
 - **Determinism**: same seed gives byte-identical output, a different seed gives a
   different world, save/load round-trips, and RNG streams are independent.
 - **Names**: unique, follow the grammar, not dictionary words.
@@ -316,3 +330,90 @@ fact or query.
     KB facts.
   - Tested: the independent reasoner, run on the context alone, reproduces every
     answer.
+
+## Training (Phase 3)
+
+**Model** (`train/model.py`): a nanoGPT-style decoder in MLX.
+- Pre-LayerNorm blocks (no biases) and rotary position embeddings.
+- SwiGLU MLP by default (hidden size = 8/3·d, rounded up to a multiple of 64), or
+  GELU (4·d).
+- Tied input/output embeddings.
+- Init: N(0, 0.02); residual output projections are scaled by 1/√(2L).
+
+| size | layers | width | heads | params (vocab ≈1.25k) |
+|---|---|---|---|---|
+| S | 4 | 192 | 4 | 2.0M |
+| M | 6 | 320 | 5 | 8.0M |
+| L | 6 | 512 | 8 | 19.9M |
+
+The brief asked for widths 256–384 and 4–6 layers. ~2M and ~20M are not reachable
+inside both ranges at once, so S uses width 192 and L uses width 512. Layers and
+heads stay within the brief.
+
+`compute_dtype` gives mixed precision:
+- weights stay float32, and each matmul casts weights and activations to bf16/fp16;
+- norms, softmax and the loss stay float32.
+
+On the M1, bf16 gives only a small speed-up and is sometimes slower (no native
+bf16), so the default is float32. Re-measure on the M5 with `train.bench`.
+
+**Optimization** (`train/trainer.py`):
+- AdamW with β = (0.9, 0.95) and bias correction on (MLX's default is off). Weight
+  decay 0.1 applies to matrices only, not to the norm gains.
+- Gradients are clipped at 1.0; the step is compiled with `mx.compile`.
+- LR schedule: linear warmup, then cosine decay to 10% of the peak. The schedule is a
+  function of **budget progress**, not of step count. Progress = consumed / budget:
+  - `budget_kind: tokens` counts non-pad tokens processed (equal compute);
+  - `budget_kind: items` counts KB facts + queries seen (equal facts/queries).
+
+  So token-matched and item-matched runs follow the same schedule shape however
+  many steps each one takes.
+
+**Data stream** (`train/data.py`):
+- **Facts-in-weights** has two stages:
+  1. KB documents only, for the first `stage1_frac` (10%) of the budget;
+  2. each epoch is one pass over the train queries, *mixed with one pass over the
+     KB* (`kb_per_query_epoch: 1.0`).
+
+  The brief says "first KB, then queries". Mixing the KB back in during stage 2
+  stops the model forgetting facts that are never queried. The held-out-combo split
+  depends on exactly those facts, since they are never asked in training. Pure
+  sequential training is `kb_per_query_epoch: 0`.
+- **Facts-in-context** has no KB documents. Every query carries its context.
+- **Batches**: each batch has a single padded length (a multiple of 16) and holds at
+  most 8,192 padded tokens, which keeps the number of compiled shapes around 10.
+- **Determinism**: each epoch's batch plan is a pure function of (seed, stage,
+  epoch). Checkpoints store the model, the optimizer, the counters and the stream
+  position (stage, epoch, batch). A resumed run reproduces an uninterrupted one
+  (tested).
+- **What `train.seed` controls**: model init, data order, paraphrase sampling and
+  context sampling. The **world is fixed** (`configs/world/default.yaml`, seed 0),
+  so the seed sweep measures training variance on one world.
+- **Evaluation** always renders queries with data seed 0 and epoch 0, so every run is
+  scored on identical token sequences.
+
+**Evaluation** (`train/evaluate.py`): exact match on the single answer token.
+- `proof: none / after`: one forward pass per query; take the argmax at the last
+  prompt position.
+- `proof: before`: greedy decoding (left-padded, key-padding mask) until `<|ans|>`,
+  then read the next token.
+- **Periodic evals**: 20 per run, evenly spaced in progress, each on a fixed
+  1,000-query subsample per split. They log accuracy per split and per
+  split × task type.
+- **Final eval**: covers full splits. It writes `results.json` (accuracy per
+  split × task type × hops) and `predictions.jsonl` (one row per query, for Phase 4).
+
+**Run directory** `runs/<run_id>/`:
+- `config.yaml` (resolved config) and `meta.json` (git hash + dirty flag, seed, world
+  fingerprint, parameter count, vocab size, MLX version, machine);
+- `log.jsonl`: step, stage, loss, grad norm, lr, progress, tokens, KB facts / queries /
+  context facts seen, wall time;
+- `eval.jsonl`, `results.json`, `predictions.jsonl`, `ckpt/`.
+
+A run that already has `results.json` is skipped. A run with only a checkpoint
+resumes; log rows written after that checkpoint are dropped, and that part is redone.
+
+**Controls**:
+- `label_shuffle`: train answers are permuted within each (form, answer kind), so the
+  answer marginals are preserved.
+- `train_subset`: train on only N queries (used by the overfit check).

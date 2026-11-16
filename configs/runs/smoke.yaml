@@ -1,0 +1,14 @@
+# Tiny world, tiny model: exercises the whole pipeline in under a minute.
+world: configs/world/tiny.yaml
+data:
+  encoding: symbolic
+  regime: weights
+model:
+  size: XS
+train:
+  budget: 200000
+  max_batch_tokens: 2048
+  n_evals: 4
+  eval_max_per_split: 200
+  log_every: 10
+  ckpt_every: 50

@@ -1,0 +1,27 @@
+# Base run config; override fields on the command line, e.g.
+#   uv run python -m train.run configs/runs/base.yaml data.encoding=prose model.size=M train.seed=1
+world: configs/world/default.yaml
+data:
+  encoding: symbolic      # prose | symbolic | triples
+  regime: weights         # weights (facts-in-weights) | context (facts-in-context)
+  proof: none             # none | after | before
+  n_distractors: 6
+  paraphrase: resample
+  kb_facts_per_doc: 16
+model:
+  size: S                 # S ~2M, M ~8M, L ~20M
+  mlp: swiglu
+  compute_dtype: float32
+train:
+  seed: 0
+  budget_kind: tokens     # tokens (equal compute) | items (equal KB facts + queries seen)
+  budget: 20000000
+  max_batch_tokens: 8192
+  lr: 0.001
+  warmup_frac: 0.02
+  weight_decay: 0.1
+  grad_clip: 1.0
+  stage1_frac: 0.1
+  kb_per_query_epoch: 1.0
+  n_evals: 20
+  eval_max_per_split: 1000
