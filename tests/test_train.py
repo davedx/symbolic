@@ -252,3 +252,25 @@ def test_eval_single_step_equals_generation_for_answer_first(tiny):
         ids, _ = ev._prompt(q)
         logits = m(mx.array([ids]))
         assert enc.vocab.decode([int(mx.argmax(logits[0, -1]))]) == r["pred"]
+
+
+# ------------------------------------------------------------------------------ probes
+def test_probes_run_on_smoke_models(tmp_path):
+    """The diagnostic probes run end to end on tiny trained runs and return their keys."""
+    from train.probes import load, probe_context, probe_edit, probe_lens
+
+    ctx = smoke_cfg(data__regime="context", data__rename="nodes")
+    tc = Trainer(ctx, runs_dir=tmp_path)
+    tc.train(verbose=False)
+    res = probe_context(load(tc.run_dir), n=10)
+    assert {"chain1/train", "trans_true/train", "pass"} <= set(res)
+
+    wts = smoke_cfg()
+    tw = Trainer(wts, runs_dir=tmp_path)
+    tw.train(verbose=False)
+    t = load(tw.run_dir)
+    lens = probe_lens(t, n=10)
+    for v in lens.values():
+        assert len(v["kb_cloze"]) == len(v["query_at_answer"]) == len(t.model.blocks) + 1
+    ed = probe_edit(t, n_edit=5, epochs=1)
+    assert set(ed["history"]) == {"before", "epoch1"}

@@ -8,6 +8,7 @@ import pytest
 
 from encoders.base import ANS, BOS, EOS, PROOF, QUERY, SPECIALS
 from encoders.dataset import (
+    rename_example,
     ENCODERS,
     ContextSampler,
     DataConfig,
@@ -218,6 +219,40 @@ def test_context_contains_needed_facts_and_is_sufficient(ds):
         assert Closure(sub).answer(q.form, q.args) == q.answer, q.qid
 
 
+@pytest.mark.parametrize("rename", ["entities", "nodes"])
+def test_renamed_context_is_sufficient_and_consistent(ds, rename):
+    """Renaming is a consistent relabelling: the reasoner, given only the renamed context,
+    derives the renamed answer; nodes really change; it is deterministic per (qid, epoch)."""
+    w = ds.world
+    sampler = ContextSampler(w)
+    cfg = DataConfig(regime="context", rename=rename)
+    changed = n_ent = 0
+    for q in _sample(ds.queries, 1500):
+        ctx = sampler.sample(q, cfg)
+        q2, ctx2 = rename_example(w, q, ctx, cfg, 0)
+        assert (q2, ctx2) == rename_example(w, q, ctx, cfg, 0)
+        assert len(set(ctx2)) == len(ctx2)
+        sub = dataclasses.replace(w, facts=ctx2)
+        assert Closure(sub).answer(q2.form, q2.args) == q2.answer, q.qid
+        changed += q2.args != q.args
+        if q.form == "chain":
+            n_ent += 1
+            assert q2.answer in w.entities
+        cats = lambda fs: sorted(x for f in fs for x in f if isinstance(x, str) and x in w.cat_level)
+        if rename == "entities":
+            assert cats(ctx2) == cats(ctx)
+    assert changed > 0.95 * 1500 and n_ent > 0
+
+
+def test_rename_off_by_default_and_ignored_in_weights(tiny, encs_tiny):
+    enc = encs_tiny["symbolic"]
+    q = tiny.queries[0]
+    a = query_example(enc, q, DataConfig(regime="context"), 0).tokens
+    b = query_example(enc, q, DataConfig(regime="context", rename="nodes"), 0).tokens
+    assert a != b
+    assert query_example(enc, q, DataConfig(rename="nodes"), 0).tokens == query_example(enc, q, DataConfig(), 0).tokens
+
+
 def test_context_varies_with_epoch(tiny):
     sampler = ContextSampler(tiny.world)
     cfg = DataConfig(regime="context")
@@ -313,3 +348,15 @@ def test_context_includes_overridden_default_for_exceptions(default_ds):
         ctx = sampler.sample(q, cfg)
         assert q.overridden in ctx
         assert all(f in ctx for _, f in q.proof)
+
+
+def test_ctx_loss_masks_context_tokens(tiny, encs_tiny):
+    enc = encs_tiny["symbolic"]
+    q = tiny.queries[0]
+    a = query_example(enc, q, DataConfig(regime="context"), 0)
+    b = query_example(enc, q, DataConfig(regime="context", ctx_loss=True), 0)
+    assert a.tokens == b.tokens
+    q_at = b.tokens.index(QUERY)
+    assert b.loss_mask[:2] == [0, 0] and all(b.loss_mask[2:q_at])
+    assert b.loss_mask[q_at:b.prompt_len] == [0] * (b.prompt_len - q_at)
+    assert b.loss_mask[b.prompt_len:] == a.loss_mask[a.prompt_len:]

@@ -13,11 +13,18 @@ Sequence layouts (token strings; the trainer maps them through ``Encoder.vocab``
 Regimes:
     weights  facts-in-weights: train on KB documents, then on queries with no context
     context  facts-in-context: every query carries the facts it needs plus distractors
+
+Renaming (context regime, ``rename``): with a fixed world every query has a constant
+answer, so a model can memorize the world through the train queries and ignore the
+context (the M pilot did exactly that; see README). ``rename="nodes"`` gives every
+example a fresh, consistent renaming of its entities and categories (drawn from the
+world's own names, so the vocabulary is unchanged), applied to context, query, proof
+and answer alike. The only way to answer is then to read the context.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 
@@ -45,6 +52,8 @@ class DataConfig:
     related_fraction: float = 0.5  # share of distractors that mention a node of the proof
     paraphrase: str = "resample"  # resample: new template per epoch for train items; fixed: always variant 0
     kb_facts_per_doc: int = 16  # weights regime: facts per KB document
+    rename: str = "none"  # context regime: none | entities | nodes (entities + categories), per example
+    ctx_loss: bool = False  # context regime: also put loss on the context facts (LM objective on the context)
     seed: int = 0
 
 
@@ -125,6 +134,57 @@ class ContextSampler:
         return [ctx[i] for i in rng.permutation(len(ctx))]
 
 
+def _is_entity(x) -> bool:
+    return isinstance(x, str) and len(x) > 1 and x[0] == "E" and x[1:].isdigit()
+
+
+def _is_category(x) -> bool:
+    return isinstance(x, str) and len(x) > 1 and x[0] == "C" and x[1:].isdigit()
+
+
+def _map(x, m: dict):
+    if isinstance(x, (tuple, list)):
+        return type(x)(_map(y, m) for y in x)
+    return m.get(x, x) if isinstance(x, str) else x
+
+
+def _collect(x, out: list) -> None:
+    if isinstance(x, (tuple, list)):
+        for y in x:
+            _collect(y, out)
+    elif _is_entity(x) or _is_category(x):
+        out.append(x)
+
+
+def rename_example(world: World, q: Query, ctx: list[tuple], cfg: "DataConfig", epoch: int):
+    """A fresh, consistent renaming of an example's nodes (see module docstring).
+
+    Each entity (and, for ``nodes``, each category) mentioned anywhere in the example
+    maps to a distinct random entity (category) of the world. Deterministic in
+    (seed, qid, epoch).
+    """
+    rng = np.random.default_rng(stable_int(cfg.seed, "rename", q.qid, epoch))
+    found: list = []
+    _collect([q.args, q.answer, [f for _, f in q.proof], q.overridden, ctx], found)
+    found = list(dict.fromkeys(found))
+    m: dict[str, str] = {}
+    for kind, pool, is_kind in (("E", world.entities, _is_entity), ("C", world.categories, _is_category)):
+        if kind == "C" and cfg.rename != "nodes":
+            continue
+        xs = [x for x in found if is_kind(x)]
+        if xs:
+            picks = rng.choice(len(pool), size=len(xs), replace=False)
+            m.update({x: pool[int(i)] for x, i in zip(xs, picks)})
+    q2 = replace(
+        q,
+        args=_map(q.args, m),
+        answer=_map(q.answer, m),
+        proof=[(r, _map(f, m)) for r, f in q.proof],
+        overridden=_map(q.overridden, m),
+    )
+    return q2, [_map(f, m) for f in ctx]
+
+
 def _nodes(f: tuple) -> list[str]:
     if f[0] in ("isa", "sub"):
         return [f[1], f[2]]
@@ -146,6 +206,8 @@ def query_example(
     if cfg.regime == "context":
         sampler = ctx_sampler or ContextSampler(enc.world)
         ctx = sampler.sample(q, cfg, epoch)
+        if cfg.rename != "none":
+            q, ctx = rename_example(enc.world, q, ctx, cfg, epoch)
         n_ctx = len(ctx)
         ctx_toks = [CTX]
         for f in ctx:
@@ -175,6 +237,10 @@ def query_example(
         raise ValueError(cfg.proof)
     toks = prefix + target
     mask = [0] * len(prefix) + [1] * len(target)
+    if cfg.ctx_loss and ctx_toks:
+        # loss on every context token after <|ctx|> (positions 2 .. 1 + len(ctx_toks) - 1)
+        for i in range(2, 1 + len(ctx_toks)):
+            mask[i] = 1
     return Example(toks, mask, prompt_len=len(prefix), qid=q.qid, answer=ans, n_facts=n_ctx, n_queries=1)
 
 

@@ -140,13 +140,17 @@ class Evaluator:
 
 
 def summarize(rows: list[dict]) -> dict:
-    """Accuracy per split, per split x task type, per split x task type x hops."""
+    """Accuracy per split, per split x task type, per split x task type x hops, and
+    per split x form x hops (separates entity-valued chains from boolean trans queries,
+    which share the `relation` task type)."""
     acc = defaultdict(lambda: [0, 0])
     for r in rows:
         for key in (
             (r["split"],),
             (r["split"], r["task_type"]),
             (r["split"], r["task_type"], r["hops"]),
+            (r["split"], f"form:{r['form']}"),
+            (r["split"], f"form:{r['form']}", r["hops"]),
         ):
             acc[key][0] += r["correct"]
             acc[key][1] += 1

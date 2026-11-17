@@ -60,6 +60,10 @@ class RunConfig:
         d, m, t = self.data, self.model, self.train
         size = m.size or f"L{m.n_layers}d{m.d_model}"
         parts = [d.encoding, d.regime, size, f"{t.budget_kind}{_short(t.budget)}"]
+        if d.regime == "context" and d.rename != "none":
+            parts.append(f"rn-{d.rename}")
+        if d.regime == "context" and d.ctx_loss:
+            parts.append("ctxloss")
         if d.proof != "none":
             parts.append(f"proof-{d.proof}")
         if t.label_shuffle:
