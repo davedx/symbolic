@@ -669,6 +669,14 @@ All results below come from one seed on the default world. Tools:
     - Hypothesis: the two in-context skills compete for S's capacity (4 layers × 4
       heads). Test: M (6 × 5 heads), same curriculum, 150M, 3 seeds
       (`runs/ctx/symbolic_context_M_tokens150M_rn-nodes_ramp10_s*`).
+  - **M falsifies the capacity hypothesis.** 0/3 M runs learned anything in
+    context: isa/trans at chance and chains 0.00–0.04 for all 150M tokens. The
+    larger model is worse, not better.
+  - Together with the trajectory dependence (the same seed lands differently under
+    different schedules), this points at optimization; lr 1e-3 was never tuned.
+  - Next: an lr sweep, everything else fixed (`runs/lr/`):
+    - S, 60M: lr 3e-4 and 3e-3, 3 seeds each;
+    - M, 150M: lr 3e-4, 2 seeds.
 
 #### Held-out category split
 
