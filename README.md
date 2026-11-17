@@ -677,6 +677,26 @@ All results below come from one seed on the default world. Tools:
   - Next: an lr sweep, everything else fixed (`runs/lr/`):
     - S, 60M: lr 3e-4 and 3e-3, 3 seeds each;
     - M, 150M: lr 3e-4, 2 seeds.
+  - **The learning rate is the lever.** Boolean success = iid isa and trans > 0.9;
+    chain success = iid 1-hop chain > 0.5.
+
+    | size, budget | lr | boolean | chain | 1-hop chain per seed |
+    |---|---|---|---|---|
+    | S, 60M | 3e-3 | 0/3 | 0/3 | 0.00 / 0.00 / 0.00 |
+    | S, 60M | 1e-3 | 1/3 | 0/3 | 0.05 / 0.14 / 0.28 |
+    | S, 60M | **3e-4** | 1/3 | **2/3** | 0.75 / 0.70 / 0.46 |
+    | M, 150M | 1e-3 | 0/3 | 0/3 | ≤ 0.04 |
+    | M, 150M | **3e-4** | 0/2 | **2/2** | 0.64 / 0.81 (2-hop 0.25 / 0.69) |
+
+    - S seed 0 at 3e-4 acquired **both** skills: isa 0.99, trans 0.97, chain 1-hop
+      0.75 / 2-hop 0.63, length trans 0.91. The "mutually exclusive skills"
+      pattern was an artifact of lr 1e-3 being too high, and M's failure at 1e-3 is
+      the usual need for a lower lr at larger size.
+    - Booleans remain the less reliable skill. Plausibly, a 2-way answer gives a
+      weak gradient on the plateau (guessing already scores 0.5), while a ~1000-way
+      chain answer gives a strong one.
+    - Next: lr 1e-4 (S 60M × 3 seeds, M 150M × 2) to see whether the trend
+      continues.
 
 #### Held-out category split
 
