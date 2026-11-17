@@ -653,8 +653,22 @@ All results below come from one seed on the default world. Tools:
       context is followed 0.31–0.33 of the time (0.55–0.58 when originally
       correct), and the old answer is never kept.
     - So different runs acquire different lookup skills first.
-    - Next test: the same configuration at 150M tokens, 3 seeds, to see whether
-      escape is a waiting-time process that a 60M budget truncates.
+  - **150M tokens** (same configuration, 3 seeds):
+    - **0/3** broke the boolean plateau. That includes seed 0, which broke at 60M
+      (the cosine schedule differs, so trajectories differ).
+    - Instead, chain lookup emerged:
+
+      | seed | 1-hop | 2-hop | train-chain curve |
+      |---|---|---|---|
+      | 0 | 0.58 | 0.16 | steady climb |
+      | 1 | 0.49 | 0.38 | late jump 0.05 → 0.42, still rising at the end |
+      | 2 | 0.14 | 0.05 | slow |
+
+    - Across all 7 curriculum runs at S, **no run acquired both** the boolean lookup
+      (isa/trans) and the chain lookup.
+    - Hypothesis: the two in-context skills compete for S's capacity (4 layers × 4
+      heads). Test: M (6 × 5 heads), same curriculum, 150M, 3 seeds
+      (`runs/ctx/symbolic_context_M_tokens150M_rn-nodes_ramp10_s*`).
 
 #### Held-out category split
 
