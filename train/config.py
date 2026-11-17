@@ -33,6 +33,8 @@ class TrainConfig:
     # controls
     label_shuffle: bool = False  # permute train answers within (form, answer kind)
     train_subset: int = 0  # >0: use only this many train queries (overfit test)
+    train_forms: list = field(default_factory=list)  # non-empty: train only on these query forms (diagnostics)
+    train_max_hops: int = 0  # >0: train only on queries with at most this many hops (diagnostics)
     # evaluation / logging
     n_evals: int = 20  # periodic evals, evenly spaced in budget progress
     eval_max_per_split: int = 1000  # periodic evals use a fixed subsample per split
@@ -70,6 +72,14 @@ class RunConfig:
             parts.append("shuffled")
         if t.train_subset:
             parts.append(f"subset{t.train_subset}")
+        if t.train_forms:
+            parts.append("only-" + "+".join(t.train_forms))
+        if t.train_max_hops:
+            parts.append(f"maxhop{t.train_max_hops}")
+        if d.regime == "context" and d.n_distractors != DataConfig().n_distractors:
+            parts.append(f"dist{d.n_distractors}")
+        if d.regime == "context" and d.distractor_ramp_epochs:
+            parts.append(f"ramp{d.distractor_ramp_epochs}")
         parts.append(f"s{t.seed}")
         return "_".join(parts)
 

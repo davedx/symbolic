@@ -55,6 +55,10 @@ def answer_kind(q: Query) -> str:
 def train_queries(ds: Dataset, tc: TrainConfig) -> list[Query]:
     """Train split, optionally subsampled and/or with shuffled labels (controls)."""
     qs = ds.split(TRAIN)
+    if tc.train_forms:
+        qs = [q for q in qs if q.form in tc.train_forms]
+    if tc.train_max_hops:
+        qs = [q for q in qs if q.hops <= tc.train_max_hops]
     if tc.train_subset:
         rng = np.random.default_rng(stable_int(tc.seed, "subset"))
         qs = [qs[i] for i in sorted(rng.choice(len(qs), size=tc.train_subset, replace=False))]

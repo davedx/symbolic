@@ -72,7 +72,7 @@ def _name(w, x) -> str:
 # ----------------------------------------------------------------------------- context
 def probe_context(t: Trainer, n: int = 300, seed: int = 0) -> dict:
     enc, w, model = t.enc, t.ds.world, t.model
-    dc = dataclasses.replace(t.cfg.data, seed=0)
+    dc = dataclasses.replace(t.cfg.data, seed=0, distractor_ramp_epochs=0)
     if dc.regime != "context":
         raise SystemExit("context probe needs a facts-in-context run")
     plain = dataclasses.replace(dc, rename="none")

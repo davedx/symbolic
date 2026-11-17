@@ -45,7 +45,7 @@ def eval_sets(ds: Dataset, train_qs: list[Query], max_per_split: int) -> dict[st
 class Evaluator:
     def __init__(self, enc: Encoder, dc: DataConfig, batch_size: int = 256):
         self.enc = enc
-        self.dc = dataclasses.replace(dc, seed=0)
+        self.dc = dataclasses.replace(dc, seed=0, distractor_ramp_epochs=0)  # eval: full distractors
         self.batch_size = batch_size
         self.sampler = ContextSampler(enc.world) if dc.regime == "context" else None
         self._cache: dict[str, tuple] = {}

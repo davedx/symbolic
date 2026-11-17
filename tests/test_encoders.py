@@ -360,3 +360,18 @@ def test_ctx_loss_masks_context_tokens(tiny, encs_tiny):
     assert b.loss_mask[:2] == [0, 0] and all(b.loss_mask[2:q_at])
     assert b.loss_mask[q_at:b.prompt_len] == [0] * (b.prompt_len - q_at)
     assert b.loss_mask[b.prompt_len:] == a.loss_mask[a.prompt_len:]
+
+
+def test_distractor_ramp(ds):
+    from encoders.dataset import n_distractors_at
+    from train.evaluate import Evaluator
+    from encoders.dataset import make_encoder
+
+    cfg = DataConfig(regime="context", distractor_ramp_epochs=4)
+    assert [n_distractors_at(cfg, e) for e in range(6)] == [0, 2, 3, 4, 6, 6]  # round(6 * e/4)
+    sampler = ContextSampler(ds.world)
+    q = ds.queries[0]
+    assert len(sampler.sample(q, cfg, 0)) == len(sampler.needed(q))
+    assert len(sampler.sample(q, cfg, 10)) == len(sampler.needed(q)) + 6
+    ev = Evaluator(make_encoder("symbolic", ds.world), cfg)
+    assert ev.dc.distractor_ramp_epochs == 0  # evaluation always sees the full context

@@ -49,6 +49,9 @@ class DataConfig:
     regime: str = "weights"  # weights | context
     proof: str = "none"  # none | before | after
     n_distractors: int = 6  # context regime: extra facts beyond those the proof needs
+    distractor_ramp_epochs: int = 0  # context regime, training only: distractors grow linearly from 0 to
+    # n_distractors over this many epochs (a curriculum for in-context lookup; evaluation always uses
+    # the full n_distractors because the evaluator sets this to 0)
     related_fraction: float = 0.5  # share of distractors that mention a node of the proof
     paraphrase: str = "resample"  # resample: new template per epoch for train items; fixed: always variant 0
     kb_facts_per_doc: int = 16  # weights regime: facts per KB document
@@ -121,11 +124,12 @@ class ContextSampler:
                     if g not in exclude and g not in seen:
                         seen.add(g)
                         related.append(g)
-        n_rel = min(len(related), round(cfg.n_distractors * cfg.related_fraction))
+        n_dist = n_distractors_at(cfg, epoch)
+        n_rel = min(len(related), round(n_dist * cfg.related_fraction))
         picks = [related[i] for i in rng.choice(len(related), size=n_rel, replace=False)] if n_rel else []
         chosen = set(picks) | exclude
         facts = self.w.facts
-        while len(picks) < cfg.n_distractors:
+        while len(picks) < n_dist:
             f = facts[int(rng.integers(len(facts)))]
             if f not in chosen:
                 chosen.add(f)
@@ -183,6 +187,12 @@ def rename_example(world: World, q: Query, ctx: list[tuple], cfg: "DataConfig", 
         overridden=_map(q.overridden, m),
     )
     return q2, [_map(f, m) for f in ctx]
+
+
+def n_distractors_at(cfg: "DataConfig", epoch: int) -> int:
+    if cfg.distractor_ramp_epochs <= 0:
+        return cfg.n_distractors
+    return round(cfg.n_distractors * min(1.0, epoch / cfg.distractor_ramp_epochs))
 
 
 def _nodes(f: tuple) -> list[str]:
