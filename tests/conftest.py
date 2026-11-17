@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -14,6 +15,9 @@ from world.kb import (
     REL_TRANSITIVE,
     World,
 )
+
+# tests never wait for (or occupy) the machine-wide job slots; MLX caps stay on
+os.environ.setdefault("SYMBOLIC_MEMGUARD", "0")
 
 CONFIGS = Path(__file__).resolve().parents[1] / "configs" / "world"
 

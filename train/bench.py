@@ -25,6 +25,7 @@ import mlx.optimizers as optim
 from encoders.dataset import DataConfig, make_encoder
 
 from .config import RunConfig
+from .memguard import Slot, configure as configure_memory
 from .data import TrainStream, load_dataset, train_queries
 from .evaluate import Evaluator, eval_sets
 from .model import ModelConfig, Transformer, count_params
@@ -125,6 +126,9 @@ def main() -> None:
     ap.add_argument("--seeds", type=int, default=3)
     ap.add_argument("--out", default="runs/bench.json")
     args = ap.parse_args()
+    configure_memory()
+    slot = Slot()
+    slot.acquire("bench")  # released at process exit
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)  # runs/ is gitignored, so absent in a fresh clone

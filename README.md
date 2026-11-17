@@ -428,6 +428,40 @@ slot of 4,000 KB facts:
 This separates "the fact is not stored" from "the fact is stored but queries cannot
 retrieve it".
 
+### Memory safeguards (`train/memguard.py`)
+
+Running four jobs at once once used ~200 GB and crashed the 128 GB Mac Studio. Cause:
+MLX caches freed GPU buffers. Its default cache limit equals its memory limit, which
+defaults to 1.5× the GPU's recommended working set, i.e. **~173 GB per process** on
+the M5 Max. Evaluation uses many batch shapes, and a buffer freed for one shape is
+rarely reused for another, so the cache only grows.
+- Measured on a 6M-token S context run: live memory peaked at 1.5 GB, but the cache
+  reached 51 GB. Each periodic eval added several GB, and the final full eval added
+  about 28 GB.
+- Peak live memory for L in the context regime is 4.2 GB.
+
+Safeguards, all on by default for `train.run`, `train.checks`, `train.probes` and
+`train.bench`:
+
+| safeguard | default | env var |
+|---|---|---|
+| MLX cache limit per process | 6 GB | `SYMBOLIC_CACHE_LIMIT_GB` |
+| MLX memory limit per process | 16 GB | `SYMBOLIC_MEM_LIMIT_GB` |
+| concurrent jobs (machine-wide file locks in `~/.cache/symbolic/slots`; a job waits for a slot) | 2 | `SYMBOLIC_MAX_JOBS` |
+| start only with this much free memory on top of the per-process limit | 16 GB | `SYMBOLIC_RESERVE_GB` |
+| watchdog: stop the job if its live memory exceeds the limit, or if system free memory drops below the reserve | on | — |
+
+- When the watchdog fires, it saves a checkpoint and exits with `MemoryGuardError`,
+  so the run can be resumed.
+- File locks are released by the OS when a process dies, so a crash never leaves a
+  slot stuck.
+- `SYMBOLIC_MEMGUARD=0` turns off slots and admission. The caps and the watchdog
+  stay on. The test suite sets it so tests never queue behind real jobs.
+- Cost: a 2 GB cache cap slowed S by 15%. 6 GB matches uncapped speed (312k vs 313k
+  tokens/s).
+- Each process stays at about 7.5 GB (S) to 10 GB (L). The log records `mlx_gb` per
+  step, and `results.json` records `peak_memory_gb`.
+
 ### Pre-run checks (M1 Pro, size S)
 
 | check | prose | symbolic | triples |

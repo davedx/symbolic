@@ -38,6 +38,7 @@ from encoders.dataset import make_encoder
 from .config import RunConfig
 from .data import StreamState, TrainStream, load_dataset, train_queries
 from .evaluate import EVAL_SEED, Evaluator, eval_sets, kb_recall, summarize
+from .memguard import MemoryGuardError, Slot, Watchdog, configure as configure_memory, process_gb
 from .model import Transformer, count_params
 
 
@@ -86,7 +87,9 @@ def git_info() -> dict:
 
 class Trainer:
     def __init__(self, cfg: RunConfig, runs_dir: str | Path = "runs", data_dir: str | Path = "data"):
+        configure_memory()  # cap MLX cache/memory before anything is allocated (train/memguard.py)
         self.cfg = cfg
+        self.runs_root = Path(runs_dir)
         self.run_dir = Path(runs_dir) / cfg.resolved_run_id()
         self.ds = load_dataset(cfg.world, data_dir)
         self.enc = make_encoder(cfg.data.encoding, self.ds.world)
@@ -174,6 +177,21 @@ class Trainer:
 
     def train(self, resume: bool = True, verbose: bool = True) -> dict | None:
         if self.done:
+            return self._train(resume, verbose)
+        slot = Slot()
+        slot.acquire(self.cfg.resolved_run_id())
+        try:
+            return self._train(resume, verbose)
+        except MemoryGuardError as e:
+            # leave a resumable checkpoint, then stop this job (not the machine)
+            self.save_checkpoint()
+            print(f"[memguard] stopped {self.run_dir} at step {self.c.step}: {e}", flush=True)
+            raise
+        finally:
+            slot.release()
+
+    def _train(self, resume: bool = True, verbose: bool = True) -> dict | None:
+        if self.done:
             if verbose:
                 print(f"{self.run_dir} already complete; skipping")
             return json.loads((self.run_dir / "results.json").read_text())
@@ -209,6 +227,7 @@ class Trainer:
 
         t_last = time.perf_counter()
         tok_since = 0
+        watchdog = Watchdog()
         while self.progress < 1.0:
             if self.stream.state.stage == 1 and self.progress >= tc.stage1_frac:
                 self.stream.end_stage1()
@@ -217,6 +236,7 @@ class Trainer:
             opt.learning_rate = lr
             loss, gnorm = step(b.inputs, b.targets, b.weights)
             mx.eval(loss, gnorm, model.parameters(), opt.state)
+            watchdog.check()
 
             self.c.step += 1
             self.c.tokens += b.n_tokens
@@ -245,6 +265,7 @@ class Trainer:
                     "items_seen": self.c.items,
                     "wall_time": self.c.wall,
                     "batch_shape": list(b.inputs.shape),
+                    "mlx_gb": round(process_gb(), 3),
                 }
                 self._append("log.jsonl", row)
                 if verbose and self.c.step % (tc.log_every * 10) == 0:
@@ -269,6 +290,7 @@ class Trainer:
         rows = []
         for split, qs in self.periodic_sets.items():
             rows += self.evaluator.predict(self.model, qs)
+        mx.clear_cache()
         summ = summarize(rows)
         row = {
             "step": self.c.step,
@@ -302,6 +324,7 @@ class Trainer:
             "accuracy": summarize(rows),
             # storage diagnostic: cloze recall of KB facts (meaningful for the weights regime)
             "kb_recall": kb_recall(self.model, self.enc, sample, self.cfg.train.eval_batch_size),
+            "peak_memory_gb": mx.get_peak_memory() / 1024**3,
             "counters": asdict(self.c),
             "n_params": count_params(self.model),
         }

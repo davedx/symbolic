@@ -39,6 +39,7 @@ from encoders.dataset import ContextSampler, Example, _variant, kb_documents, qu
 
 from .config import RunConfig
 from .evaluate import Evaluator, kb_recall
+from .memguard import Slot, Watchdog
 from .trainer import Trainer
 
 
@@ -193,6 +194,7 @@ def probe_edit(t: Trainer, direction: str = "kb", n_edit: int = 200, epochs: int
         return (ce * wt).sum() / mx.maximum(wt.sum(), 1.0)
 
     lg = nn.value_and_grad(model, loss_fn)
+    watchdog = Watchdog()
     hist = {"before": measure()}
     for ep in range(1, epochs + 1):
         r = np.random.default_rng(ep)
@@ -210,6 +212,7 @@ def probe_edit(t: Trainer, direction: str = "kb", n_edit: int = 200, epochs: int
             _, g = lg(model, b.inputs, b.targets, b.weights)
             opt.update(model, g)
             mx.eval(model.parameters(), opt.state)
+            watchdog.check()
         if ep in (1, 3, epochs):
             hist[f"epoch{ep}"] = measure()
             print(f"  epoch {ep}: {hist[f'epoch{ep}']}", flush=True)
@@ -265,6 +268,8 @@ def main() -> None:
     ap.add_argument("--epochs", type=int, default=10)
     args = ap.parse_args()
     run_dir = Path(args.run_dir)
+    slot = Slot()
+    slot.acquire(f"probe {args.probe} {run_dir.name}")
     t = load(run_dir)
     if args.probe == "context":
         res = probe_context(t)
