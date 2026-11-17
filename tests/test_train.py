@@ -60,12 +60,18 @@ def test_causality():
     assert mx.allclose(m(a)[:, :3], m(b)[:, :3], atol=1e-5)
 
 
-def test_left_padding_invariance():
-    m = Transformer(ModelConfig(vocab_size=37, size="XS"))
-    x = mx.array([[5, 6, 7, 8]])
-    xp = mx.array([[0, 0, 0, 5, 6, 7, 8]])
-    pad = mx.array([[True, True, True, False, False, False, False]])
-    assert mx.allclose(m(x), m(xp, mask=padding_mask(pad))[:, 3:], atol=1e-4)
+@pytest.mark.parametrize("device,atol", [("cpu", 1e-5), ("gpu", 1e-3)])
+def test_left_padding_invariance(device, atol):
+    # CPU checks the masking logic tightly. The GPU attention/matmul kernels differ
+    # between the padded and unpadded shapes; on the M5 that gives fp32 noise up to
+    # ~2e-4 (median 0). A masking bug would show differences around 1e-1.
+    with mx.stream(getattr(mx, device)):
+        mx.random.seed(0)
+        m = Transformer(ModelConfig(vocab_size=37, size="XS"))
+        x = mx.array([[5, 6, 7, 8]])
+        xp = mx.array([[0, 0, 0, 5, 6, 7, 8]])
+        pad = mx.array([[True, True, True, False, False, False, False]])
+        assert mx.allclose(m(x), m(xp, mask=padding_mask(pad))[:, 3:], atol=atol)
 
 
 def test_weight_tying():

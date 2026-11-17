@@ -464,8 +464,33 @@ outputs are in `runs/checks/`.
   distractors (same subject, different relation), so a 1-hop chain needs a two-key
   lookup that S has not acquired in 30M tokens.
 
-**Implications for the grid.**
-- 20M tokens is too little; budgets of ≥100M tokens per run look necessary.
-- M and L may show phase transitions that S does not.
-- Recommended: run `train.bench` on the Mac Studio first, then a short M/L pilot at
-  100–200M tokens, before fixing the grid budget.
+(The M pilot below shows that the transitive result is **not** in-context reasoning.)
+
+### Pilot findings (size M, symbolic, 200M tokens, M5 Max; `runs/pilot/`)
+
+Each run takes about 20 min in fp32.
+
+**Facts-in-weights.** Train accuracy reaches 1.0 at about 30M tokens. Every held-out
+split is then **flat from 30M to 200M** (iid 0.71, combo 0.46, length 0.40, category
+0.16), so there is no late transition at M. Entity-valued `chain` queries score 0.00
+on test_iid, even at 1 hop, while KB recall is 1.00. The storage-vs-extraction gap is
+total, and the 4× larger model does not close it.
+
+**Facts-in-context: the regime is confounded (the model ignores the context).**
+- `chain` queries score 1.00 on train and 0.00 on test_iid at every hop count, even
+  though a 1-hop chain is a single lookup in the given context.
+- Counterfactual probe on 300 train 1-hop chains: rename the answer entity in the
+  context to a fresh entity. The model still outputs the **original** answer 100% of the
+  time, and the new one 0%. On test_iid only 4% of predictions are even an entity that
+  appears in the context.
+- `trans` queries whose answer is true: with the proof edges removed from the context,
+  the model still says true 97–99% of the time (train, iid, length). So the near-perfect
+  transitive scores and their length generalization come from the weights.
+- Cause: the world is fixed, so every query's answer is a constant. The model memorizes
+  the world through the train queries instead of reading the context. As built, the
+  regime does not test "reasoning separately from storage". A fix is pending a design
+  decision.
+
+**Throughput** (`train.bench`, M5 Max): tokens/s for S/M/L is about
+490k/180k/108k (weights) and 610k/225k/134k (context) in fp32. bf16 is 1.3–1.4×
+faster (unlike the M1). bf16 has not yet been checked for an accuracy effect.
