@@ -522,9 +522,101 @@ total, and the 4× larger model does not close it.
   transitive scores and their length generalization come from the weights.
 - Cause: the world is fixed, so every query's answer is a constant. The model memorizes
   the world through the train queries instead of reading the context. As built, the
-  regime does not test "reasoning separately from storage". A fix is pending a design
-  decision.
+  regime does not test "reasoning separately from storage". Fixed by per-example
+  renaming (`data.rename`); see "Diagnostics" below.
 
 **Throughput** (`train.bench`, M5 Max): tokens/s for S/M/L is about
 490k/180k/108k (weights) and 610k/225k/134k (context) in fp32. bf16 is 1.3–1.4×
 faster (unlike the M1). bf16 has not yet been checked for an accuracy effect.
+
+### Diagnostics (M5 Max; `runs/{ctrl,depth,early,ctx,ladder}/`)
+
+All results below come from one seed on the default world. Tools:
+- `train.probes` (context, edit, lens), with results in `<run>/probe_*.json`;
+- `train.baselines`.
+
+#### Facts-in-weights: why stored facts are not extracted
+
+- **Without the KB** (M, no KB documents, 60M tokens) the query results are almost
+  unchanged.
+  - The KB adds 12–16 points on boolean direct properties of unseen
+    (entity, property) pairs: iid 0.44 → 0.60, combo 0.51 → 0.63.
+  - It adds nothing for entity-valued chains.
+- **Edit probe** (M pilot, 200 functional facts whose 1-hop query is trained):
+  - Fine-tuning on an edited KB, with the other train queries rehearsed, changes KB
+    cloze completely (new object 1.00).
+  - The edited facts' trained queries still give the old object 1.00 of the time.
+  - Editing in query format does not reach the KB cloze (new object ≤ 0.08).
+  - So queries and KB statements are answered from two independent stores.
+- **Logit lens** (final norm + unembedding at each layer):
+  - For untrained 1-hop chains the stored object is decodable at the query's
+    **subject position** (0.93 at the last layer of M) but never at `<|ans|>` (0.00).
+  - Train queries get their answer at `<|ans|>` from layer 1 on, a separate
+    memorized route.
+- **Depth does not help.** At ~8M params, with 3×448, 6×320, 12×224 and 24×160:
+  - untrained 1-hop chain accuracy is 0.00–0.06 at every depth;
+  - KB retrieval always completes in the **last 2–3 layers**: layer 4 of 6, 11 of 12,
+    21 of 24.
+  - Extra depth is not used to retrieve earlier. Next-token prediction of the object
+    only needs the fact at the output, so nothing pushes retrieval earlier.
+- **No early extraction window.** Dense evals after a KB-only stage show train chains
+  memorized within ~4M query tokens. Untrained chains jump to ~0.04 and stay flat.
+- **KB-only stage fraction** (M, 100M tokens): untrained 1-hop chain accuracy is
+  0.020 / **0.127** / 0.054 at 10% / 30% / 60% (n = 204).
+  - In the 30% run, trained queries' `<|ans|>` lens profile tracks KB retrieval layer
+    by layer, instead of the early memorized route.
+  - Some of the retrieved object reaches `<|ans|>` for untrained queries (0.18 at the
+    last layer).
+  - The effect is not monotone, and with one seed it is unconfirmed.
+- **Encoding** (M, 100M, KB-only stage 30%): untrained 1-hop chain accuracy is
+  symbolic 0.127, triples 0.005, prose 0.000. Prose's paraphrase variety does not
+  produce extraction at this scale.
+- Summary: entity-valued facts in the weights are stored, and are even retrieved
+  inside the query, but are not routed to the answer. Every lever tried so far
+  (size, depth, budget, encoding) leaves this at or near floor. The only exception is
+  one unreplicated schedule effect.
+
+#### Facts-in-context: renaming, then a lookup curriculum
+
+- **Renaming** (`data.rename=nodes`) removes memorization: train ≈ test (0.56 vs
+  0.55). But S (60M) and M (100M) then plateau. isa and trans stay at chance and
+  1-hop chains at ≤ 0.08, even though 1-hop isa reduces to "does this category name
+  appear in the context?". Loss on the context tokens (`data.ctx_loss`) does not help.
+- **RoPE works.** Permuting earlier tokens changes the last-position logits by ~30%
+  in both random and trained models.
+- **Learnability ladder** (S, 15M tokens, 1-hop chains only; train / untrained
+  accuracy):
+
+  | distractors | train | untrained |
+  |---|---|---|
+  | 0 | 0.94 | 0.97 |
+  | 2 | 0.71 (rising) | 0.73 |
+  | 6 | 0.11 (rising slowly) | 0.13 |
+
+  - When the lookup is learned, it generalizes fully to unseen entities.
+  - The slow-to-emerge skill is content-addressed matching among confusable
+    distractors.
+- **Distractor curriculum** (`data.distractor_ramp_epochs=10`: 0 → 6 distractors over
+  the first 10 epochs; evaluation always uses 6). S, 60M tokens, test_iid:
+
+  | | isa | trans | prop | length trans / prop (4–6 hops) |
+  |---|---|---|---|---|
+  | no curriculum | 0.51 | 0.49 | 0.86 | 0.50 / 0.63 |
+  | curriculum | **0.99** | **0.95** | **0.98** | **0.93 / 0.94** |
+
+  - The jump happens between 27M and 33M tokens.
+  - Counterfactual probe: removing the proof edges drops "true" from 0.99 to
+    0.04–0.06 on train, iid and length. This is real multi-hop reasoning over the
+    given context, generalizing from 1–3 hops to 4–6.
+  - Entity-valued chains still fail (0.05). The probe's chain-based PASS criterion
+    therefore still fails.
+
+#### Held-out category split
+
+- It contains only **5** (category, property) pairs, so its effective sample size is
+  about 5.
+- Its inherited answers are mostly the opposite of each property's train prior:
+  - the predicate-prior baseline scores 0.21, against 0.82 for "always true";
+  - the weights model follows the prior (0.14).
+- It needs more pairs, and reporting split by agreement with the prior, before it
+  can be interpreted.
