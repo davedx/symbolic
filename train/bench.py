@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
+from pathlib import Path
 from collections import Counter, defaultdict
 from functools import partial
 
@@ -125,6 +126,12 @@ def main() -> None:
     ap.add_argument("--out", default="runs/bench.json")
     args = ap.parse_args()
 
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)  # runs/ is gitignored, so absent in a fresh clone
+
+    def save(extra=None):
+        out.write_text(json.dumps({"results": results, **(extra or {})}, indent=1))
+
     base = RunConfig.from_yaml(args.config)
     ds = load_dataset(base.world)
     final_q = sum(1 for q in ds.queries)
@@ -136,6 +143,7 @@ def main() -> None:
                 for enc in args.encodings:
                     r = bench_one(ds, base, enc, regime, size, dtype, args.reps, args.eval_n)
                     results.append(r)
+                    save()  # keep partial results if the run is interrupted
                     print(
                         f"{size} {dtype:8s} {regime:7s} {enc:8s} params {r['n_params'] / 1e6:5.2f}M  "
                         f"{r['tokens_per_sec'] / 1e3:7.1f}k tok/s  {r['items_per_sec']:8.0f} items/s  "
@@ -161,8 +169,8 @@ def main() -> None:
         )
     for (dtype, regime, mode), h in sorted(grid.items()):
         print(f"  GRID {dtype:8s} {regime:7s} {mode}-matched: {h:6.1f} h  ({args.seeds} seeds)")
-    with open(args.out, "w") as f:
-        json.dump({"results": results, "grid_hours": {"/".join(k): v for k, v in grid.items()}}, f, indent=1)
+    save({"grid_hours": {"/".join(k): v for k, v in grid.items()}})
+    print(f"\nwrote {out}")
 
 
 if __name__ == "__main__":
