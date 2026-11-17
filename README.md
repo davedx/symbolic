@@ -567,7 +567,25 @@ All results below come from one seed on the default world. Tools:
     by layer, instead of the early memorized route.
   - Some of the retrieved object reaches `<|ans|>` for untrained queries (0.18 at the
     last layer).
-  - The effect is not monotone, and with one seed it is unconfirmed.
+  - The effect is not monotone, and it **did not replicate**. Over 3 seeds the
+    30% − 10% difference was +0.108 / 0.000 / −0.466 (`runs/early/*_s{1,2}`).
+- **Extraction from weights is bistable across seeds.** Untrained 1-hop chain
+  accuracy at M, 100M tokens:
+
+  | KB-only stage | seed 0 | seed 1 | seed 2 |
+  |---|---|---|---|
+  | 10% | 0.020 | 0.025 | **0.475** |
+  | 30% | 0.127 | 0.025 | 0.010 |
+
+  - The seed-2 / 10% run also gets 0.263 on held-out combo.
+  - That run's extraction appeared as soon as train chains were memorized (0.088 at
+    20M tokens) and kept growing until ~65M. The other runs stay ≤ 0.06 throughout.
+  - The same seed with the 30% schedule did not extract. So the outcome depends on
+    the whole training trajectory, not on the seed's initialization alone.
+  - Extraction stays limited to 1 hop; 2-hop untrained chains are 0 in every run.
+  - Implication: per-condition means over 2–3 seeds are misleading here. Grid cells
+    need more seeds, and should report the fraction of runs that extract alongside
+    the mean.
 - **Encoding** (M, 100M, KB-only stage 30%): untrained 1-hop chain accuracy is
   symbolic 0.127, triples 0.005, prose 0.000. Prose's paraphrase variety does not
   produce extraction at this scale.
@@ -610,6 +628,17 @@ All results below come from one seed on the default world. Tools:
     given context, generalizing from 1–3 hops to 4–6.
   - Entity-valued chains still fail (0.05). The probe's chain-based PASS criterion
     therefore still fails.
+  - Why chains fail under the curriculum: 90% of chain predictions are not even
+    entities from the context, so no copy-by-matching mechanism has formed.
+    - In the chain-only ladder model (2 distractors), errors rarely pick a
+      same-subject fact (~4%).
+    - So conjunctive (subject AND relation) matching is not the bottleneck; forming
+      the copy circuit at all is.
+  - **Starting the ramp at 2 distractors** (`data.distractor_ramp_start=2`), meant to
+    prevent a positional-copy shortcut, failed completely. Everything returned to the
+    plateau: isa 0.49, trans 0.51, chains 0.00. The 0-distractor phase appears
+    necessary for the boolean breakthrough. Seed replication of both variants is in
+    `runs/ctx/*_s{1,2}`.
 
 #### Held-out category split
 
@@ -620,3 +649,17 @@ All results below come from one seed on the default world. Tools:
   - the weights model follows the prior (0.14).
 - It needs more pairs, and reporting split by agreement with the prior, before it
   can be interpreted.
+- **World v2** (`configs/world/v2.yaml`) holds out 20 property pairs (23 pairs in
+  total), giving 576 inherited queries. The predicate-prior baseline still scores only
+  0.318. This is structural: a held-out pair is only informative if the category's
+  value can differ from the property's value elsewhere.
+- **Prior-agreement strata** (`uv run python -m train.baselines --run <dir>`) report
+  accuracy separately for queries whose gold answer agrees or disagrees with the
+  predicate prior. On held-out category, inherited:
+
+  | | agree | disagree (n = 93) |
+  |---|---|---|
+  | weights (M pilot) | 0.44 | **0.054** |
+  | context (curriculum, S) | 1.00 | **1.00** |
+
+  The "disagree" stratum is the clean test of reading the KB or the context.
