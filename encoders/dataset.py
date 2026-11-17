@@ -52,6 +52,9 @@ class DataConfig:
     distractor_ramp_epochs: int = 0  # context regime, training only: distractors grow linearly from 0 to
     # n_distractors over this many epochs (a curriculum for in-context lookup; evaluation always uses
     # the full n_distractors because the evaluator sets this to 0)
+    distractor_ramp_start: int = 0  # distractors at epoch 0 of the ramp. With 0 distractors a 1-hop chain is
+    # solvable positionally (copy the only fact's object), a shortcut that does not survive distractors;
+    # starting at 2 forces lookup by matching from the start (README, "Diagnostics")
     related_fraction: float = 0.5  # share of distractors that mention a node of the proof
     paraphrase: str = "resample"  # resample: new template per epoch for train items; fixed: always variant 0
     kb_facts_per_doc: int = 16  # weights regime: facts per KB document
@@ -192,7 +195,8 @@ def rename_example(world: World, q: Query, ctx: list[tuple], cfg: "DataConfig", 
 def n_distractors_at(cfg: "DataConfig", epoch: int) -> int:
     if cfg.distractor_ramp_epochs <= 0:
         return cfg.n_distractors
-    return round(cfg.n_distractors * min(1.0, epoch / cfg.distractor_ramp_epochs))
+    a = min(cfg.distractor_ramp_start, cfg.n_distractors)
+    return round(a + (cfg.n_distractors - a) * min(1.0, epoch / cfg.distractor_ramp_epochs))
 
 
 def _nodes(f: tuple) -> list[str]:

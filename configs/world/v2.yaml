@@ -1,0 +1,28 @@
+# v2: default world with 20 held-out (category, property) pairs instead of 5 (README, "Held-out category split").
+# Any field omitted falls back to the defaults in world/config.py.
+seed: 0
+n_entities: 1000
+taxonomy:
+  target_categories: 50
+  max_depth: 5
+  min_leaf_depth: 3
+properties:
+  n_inherited_bool: 70
+  n_categorical: 10
+  n_individual: 20
+  category_exception_rate: 0.10
+  entity_exception_rate: 0.05
+relations:
+  n_functional: 6
+  n_symmetric: 1
+  n_inverse_pairs: 1
+  n_transitive: 1
+splits:
+  train_max_hops: 3
+  length_hops: [4, 6]
+  iid_fraction: 0.1
+  combo_entity_fraction: 0.2
+  combo_predicate_fraction: 0.3
+  heldout_category_level: 2
+  n_heldout_category_relations: 3
+  n_heldout_category_properties: 20

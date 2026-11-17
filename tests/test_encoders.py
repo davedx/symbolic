@@ -369,6 +369,8 @@ def test_distractor_ramp(ds):
 
     cfg = DataConfig(regime="context", distractor_ramp_epochs=4)
     assert [n_distractors_at(cfg, e) for e in range(6)] == [0, 2, 3, 4, 6, 6]  # round(6 * e/4)
+    from2 = DataConfig(regime="context", distractor_ramp_epochs=4, distractor_ramp_start=2)
+    assert [n_distractors_at(from2, e) for e in range(6)] == [2, 3, 4, 5, 6, 6]
     sampler = ContextSampler(ds.world)
     q = ds.queries[0]
     assert len(sampler.sample(q, cfg, 0)) == len(sampler.needed(q))

@@ -79,7 +79,7 @@ class RunConfig:
         if d.regime == "context" and d.n_distractors != DataConfig().n_distractors:
             parts.append(f"dist{d.n_distractors}")
         if d.regime == "context" and d.distractor_ramp_epochs:
-            parts.append(f"ramp{d.distractor_ramp_epochs}")
+            parts.append(f"ramp{d.distractor_ramp_epochs}" + (f"from{d.distractor_ramp_start}" if d.distractor_ramp_start else ""))
         parts.append(f"s{t.seed}")
         return "_".join(parts)
 

@@ -9,6 +9,10 @@ category_prior      most common train answer per (entity's level-k category, pre
                     what a model learns from query statistics alone, without reading the KB
                     (k = the held-out category level); falls back to predicate_prior
 
+``--run <dir>`` also stratifies a run's predictions by whether the gold answer agrees
+with predicate_prior: the "disagree" stratum is the part of a split that cannot be
+answered from train statistics alone.
+
 A split is only informative about reasoning if a model beats these. In particular
 test_heldout_category is built so that category_prior has no data for its pairs, and
 its answers may disagree with predicate_prior (see README).
@@ -72,11 +76,44 @@ def compute(ds, level: int) -> dict:
     }
 
 
+def prior_table(ds) -> dict:
+    tab = defaultdict(Counter)
+    for q in ds.queries:
+        if q.split == "train":
+            tab[_pred_key(q)][repr(q.answer)] += 1
+    return {k: c.most_common(1)[0][0] for k, c in tab.items()}
+
+
+def stratify_run(ds, run_dir) -> dict:
+    """Model accuracy per split x task type x (gold agrees / disagrees with predicate_prior)."""
+    qs = {q.qid: q for q in ds.queries}
+    prior = prior_table(ds)
+    hits = defaultdict(lambda: [0, 0])
+    with open(f"{run_dir}/predictions.jsonl") as f:
+        for line in f:
+            p = json.loads(line)
+            q = qs[p["qid"]]
+            pp = prior.get(_pred_key(q))
+            stratum = "agree" if pp == repr(q.answer) else "disagree"
+            for key in (f"{p['split']}/{stratum}", f"{p['split']}/{p['task_type']}/{stratum}"):
+                hits[key][0] += p["correct"]
+                hits[key][1] += 1
+    return {k: {"acc": round(c / n, 4), "n": n} for k, (c, n) in sorted(hits.items())}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--world", default="configs/world/default.yaml")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--run", default=None, help="stratify this run's predictions by prior agreement")
     args = ap.parse_args()
+    if args.run:
+        from .config import RunConfig
+
+        ds = load_dataset(RunConfig.from_yaml(f"{args.run}/config.yaml").world, "data")
+        for k, v in stratify_run(ds, args.run).items():
+            print(f"{k:50} {v['acc']:.3f}  n={v['n']}")
+        return
     ds = load_dataset(args.world, "data")
     res = compute(ds, ds.world.config.splits.heldout_category_level)
     print(f"{'split':42} {'n':>6} {'task_maj':>9} {'pred_prior':>10} {'cat_prior':>9}")
