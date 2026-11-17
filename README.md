@@ -695,8 +695,21 @@ All results below come from one seed on the default world. Tools:
     - Booleans remain the less reliable skill. Plausibly, a 2-way answer gives a
       weak gradient on the plateau (guessing already scores 0.5), while a ~1000-way
       chain answer gives a strong one.
-    - Next: lr 1e-4 (S 60M × 3 seeds, M 150M × 2) to see whether the trend
-      continues.
+  - **lr 1e-4:**
+
+    | size, budget | lr | boolean | chain | per seed |
+    |---|---|---|---|---|
+    | **M, 150M** | **1e-4** | **2/2** | **2/2** | isa 1.00/1.00, trans .97/.97, prop .99/.99, 1-hop chain .87/.86, 2-hop .74/.71, length trans .98/.97 |
+    | S, 60M | 1e-4 | 1/3 | 3/3 | 1-hop chain .66/.64/.61 |
+
+  - **Adopted context-regime configuration** (it is the only one with reliable
+    success): M, lr 1e-4, 150M tokens, `data.rename=nodes`,
+    `data.distractor_ramp_epochs=10` (ramp from 0).
+    - The lr was tuned on symbolic only.
+    - First grid slice: prose / symbolic / triples × 3 seeds on world v2
+      (`runs/grid_ctx/`).
+  - The weights-regime runs also used the untuned lr 1e-3. A check of M weights
+    extraction at lr 3e-4 and 1e-4 (2 seeds each) is queued after the grid slice.
 
 #### Held-out category split
 
