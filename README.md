@@ -636,9 +636,25 @@ All results below come from one seed on the default world. Tools:
       the copy circuit at all is.
   - **Starting the ramp at 2 distractors** (`data.distractor_ramp_start=2`), meant to
     prevent a positional-copy shortcut, failed completely. Everything returned to the
-    plateau: isa 0.49, trans 0.51, chains 0.00. The 0-distractor phase appears
-    necessary for the boolean breakthrough. Seed replication of both variants is in
-    `runs/ctx/*_s{1,2}`.
+    plateau: isa 0.49, trans 0.51, chains 0.00.
+  - **Seed replication** (S, 60M; a run "broke the plateau" if iid isa and trans
+    both exceed 0.9):
+
+    | ramp | seed 0 | seed 1 | seed 2 | broke |
+    |---|---|---|---|---|
+    | from 0 | **broke** | plateau | plateau | 1/3 |
+    | from 2 | plateau | plateau | plateau | 0/3 |
+
+    - Escaping the plateau is stochastic, and 1/3 vs 0/3 does not separate the two
+      ramps.
+    - The from-0 runs that stayed on the boolean plateau learned *more* chain
+      lookup: 1-hop 0.14 and 0.28.
+    - The seed-2 chain skill is real context reading. Renaming the answer in the
+      context is followed 0.31–0.33 of the time (0.55–0.58 when originally
+      correct), and the old answer is never kept.
+    - So different runs acquire different lookup skills first.
+    - Next test: the same configuration at 150M tokens, 3 seeds, to see whether
+      escape is a waiting-time process that a 60M budget truncates.
 
 #### Held-out category split
 
