@@ -785,6 +785,28 @@ numbers are test_iid unless marked "4–6 hops" (test_length). Mean (sd) over 3 
   - If it length-generalizes like triples, query decomposition (not role markers)
     explains triples' advantage.
   - Runs: `runs/grid_ctx/symbolic_flat_context_M_150M_v2_s*`, same config.
+  - **Result:** query decomposition explains most of triples' chain length
+    generalization. Chain accuracy per seed:
+
+    | encoding | 4–6 hops per seed | 4–6 hops mean | 1 / 2 / 3 hops (mean) | bool |
+    |---|---|---|---|---|
+    | symbolic | .05 / .06 / .05 | .05 | .87 / .74 / .67 | 1/3 |
+    | **symbolic_flat** | .46 / .30 / .60 | **.45** | .86 / .75 / .62 | 0/3 (isa 1.00 / .89 / .48, trans .51 in all) |
+    | triples | .59 / .59 / .58 | .59 | .85 / .74 / .62 | 3/3 |
+
+    - This is an effect of the **query format**, not of how facts are represented.
+      Any comparison of encodings on multi-hop chains must control for it.
+    - Triples remains higher and more consistent (sd .00 vs .15).
+- **Second, separate effect: triples acquire trans reliably** (3/3, vs symbolic 1/3,
+  symbolic_flat 0/3, prose 1/5 across lrs).
+  - Trans queries are untouched by the chain ablation, so this is a
+    fact-representation effect.
+  - Triples' facts differ from symbolic in role markers and in
+    subject-relation-object order.
+- **Ablation `triples_unmarked`** (`encoders/triples.py`): triples with
+  `<s> X <r> Y <o> Z` replaced by `( X Y Z )`. It keeps the S-R-O order, the
+  true/false value nodes and the fact-shaped chain steps; only the role tags go.
+  Runs: `runs/grid_ctx/triples_unmarked_context_M_150M_v2_s*`.
 
 #### Held-out category split
 

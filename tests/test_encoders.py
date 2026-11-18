@@ -90,6 +90,9 @@ def test_all_encodings_parse_to_same_query(setup):
         assert len({surfaces[n] for n in main}) == len(main)  # genuinely different renderings
         if "symbolic_flat" in surfaces:  # ablation: differs from symbolic only in chain queries
             assert (surfaces["symbolic_flat"] != surfaces["symbolic"]) == (q.form == "chain")
+        if "triples_unmarked" in surfaces:  # ablation: triples without role markers
+            assert not {"<s>", "<r>", "<o>"} & set(surfaces["triples_unmarked"])
+            assert surfaces["triples_unmarked"] != surfaces["triples"]
 
 
 def test_variant_counts(tiny, encs_tiny):

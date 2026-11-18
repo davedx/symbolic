@@ -44,3 +44,29 @@ class TriplesEncoder(Encoder):
             parts.append(f"<s> {subj} <r> {{r{i}:frel}} <o> {obj}")
             subj = obj
         return ["<q> " + " ".join(parts)]
+
+
+def _unmark(t: str) -> str:
+    """'<s> X <r> Y <o> Z' -> '( X Y Z )' for every pattern in a template."""
+    import re
+
+    return re.sub(r"<s> (\S+) <r> (\S+) <o> (\S+)", r"( \1 \2 \3 )", t)
+
+
+class TriplesUnmarkedEncoder(TriplesEncoder):
+    """Ablation of encoding C: role markers replaced by plain brackets.
+
+        ( rex isa dog )   <q> ( rex r1 ?x1 ) ( ?x1 r2 ? )
+
+    Subject-relation-object order, true/false value nodes and fact-shaped chain
+    patterns are kept; only the <s>/<r>/<o> role tags are removed. Tests whether the
+    role tags explain triples' reliable acquisition of transitive queries in the
+    context regime (README, "Grid slice 1").
+    """
+
+    name = "triples_unmarked"
+    FACT_TEMPLATES = {k: [_unmark(t) for t in v] for k, v in TriplesEncoder.FACT_TEMPLATES.items()}
+    QUERY_TEMPLATES = {k: [_unmark(t) for t in v] for k, v in TriplesEncoder.QUERY_TEMPLATES.items()}
+
+    def chain_templates(self, k: int) -> list[str]:
+        return [_unmark(t) for t in super().chain_templates(k)]
