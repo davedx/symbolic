@@ -708,8 +708,56 @@ All results below come from one seed on the default world. Tools:
     - The lr was tuned on symbolic only.
     - First grid slice: prose / symbolic / triples × 3 seeds on world v2
       (`runs/grid_ctx/`).
-  - The weights-regime runs also used the untuned lr 1e-3. A check of M weights
-    extraction at lr 3e-4 and 1e-4 (2 seeds each) is queued after the grid slice.
+  - **Weights-regime lr check** (M, 100M, KB-only stage 10%; untrained 1-hop
+    chain accuracy, KB recall 1.00 in every run):
+
+    | lr | seed 0 | seed 1 | seed 2 |
+    |---|---|---|---|
+    | 1e-3 | .020 | .025 | .475 |
+    | 3e-4 | .049 | .162 | — |
+    | 1e-4 | .020 | .025 | — |
+
+    - Lower lr does not make extraction reliable. In the weights regime,
+      entity-valued facts stay at or near floor at this scale; the one 0.475 run
+      remains an outlier.
+
+### Grid slice 1: facts-in-context, three encodings (`runs/grid_ctx/`)
+
+Config: M, lr 1e-4 (tuned on symbolic, default world), 150M tokens (tokens-matched),
+`data.rename=nodes`, `data.distractor_ramp_epochs=10`, world v2, seeds 0–2. All
+numbers are test_iid unless marked "4–6 hops" (test_length). Mean (sd) over 3 seeds;
+"bool" = isa and trans > 0.9, "chain" = 1-hop chain > 0.5.
+
+| encoding | isa | trans | prop | chain 1 / 2 / 3 hops | 4–6 hops trans | 4–6 hops chain | held-out cat | bool | chain | queries seen |
+|---|---|---|---|---|---|---|---|---|---|---|
+| prose | .48 (.00) | .51 (.00) | .97 | .71 / .49 / .31 | .50 | .19 (.12) | .66 | 0/3 | 3/3 | 2.39M |
+| symbolic | .99 (.00) | .66 (.27) | .99 | .87 / .74 / .67 | .63 (.23) | .05 (.01) | .81 | 1/3 | 3/3 | 2.84M |
+| **triples** | **1.00** (.00) | **.98** (.01) | .99 | .85 / .74 / .62 | **.96** (.02) | **.59** (.00) | .84 | **3/3** | **3/3** | 2.52M |
+
+- **Triples** is the only encoding that acquires every skill in every seed. It is also
+  the only one whose entity chains **length-generalize** (4–6 hops: .59 vs .05 for
+  symbolic and .19 for prose).
+  - This is not an exposure effect: symbolic saw more queries (2.84M vs 2.52M).
+- **Symbolic** chains as well as triples up to 3 hops, but does not
+  length-generalize. It acquires trans in only 1/3 seeds.
+- **Prose** is stuck on the boolean plateau in 3/3 seeds: it always answers "no" to
+  isa and trans, though its examples are correct (checked). It still learns chains
+  (3/3). lr was tuned on symbolic, so prose may need its own lr.
+- **Context probes** (seed 2 of each):
+  - Renaming the answer of a 1-hop chain is followed 0.79–0.85 of the time and the
+    old answer is never kept (all encodings), so chains are read from the context.
+  - Removing the proof edges of true trans queries drops "true" from 0.99 to 0.36
+    (triples) but only from 0.98 to 0.59 (symbolic). Symbolic leans more on a
+    shortcut cue for trans.
+- **Prior-disagree strata** (`train.baselines --run`), held-out category inherited
+  (n = 393): triples .77–.94, symbolic .70–.88, prose .71–.81. iid inherited
+  disagree (n = 326): symbolic and triples ≈ 1.00, prose ≈ .43 (the boolean
+  plateau).
+- Caveats: 3 seeds; lr tuned on one encoding; tokens-matched budgets (prose sees
+  16% fewer queries than symbolic).
+- Working hypothesis for triples' advantage: explicit role markers
+  (`<s>`/`<r>`/`<o>`) give every fact slot a fixed tag to match on, which supports
+  compositional lookup. This is testable by ablation.
 
 #### Held-out category split
 
