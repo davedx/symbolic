@@ -1,0 +1,14 @@
+{
+ "git_hash": "4197afba782890132e498e83ce28e1b30bfc055d",
+ "git_dirty": true,
+ "run_id": "prose_weights_M_100M_stage30_dense_s0",
+ "seed": 0,
+ "world_fingerprint": "38639ad32af5",
+ "n_params": 8025280,
+ "vocab_size": 1258,
+ "n_train_queries": 23938,
+ "mlx_version": "0.32.4",
+ "platform": "macOS-27.0.1-arm64-arm-64bit",
+ "machine": "arm64",
+ "started": "2026-11-17 10:38:35"
+}

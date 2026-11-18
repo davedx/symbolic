@@ -1,0 +1,14 @@
+{
+ "git_hash": "6916965bf1c9e015d764bf967e2c69cb6337fb90",
+ "git_dirty": false,
+ "run_id": "symbolic_context_S_tokens150M_rn-nodes_ramp10_s0",
+ "seed": 0,
+ "world_fingerprint": "38639ad32af5",
+ "n_params": 2005440,
+ "vocab_size": 1220,
+ "n_train_queries": 23938,
+ "mlx_version": "0.32.4",
+ "platform": "macOS-27.0.1-arm64-arm-64bit",
+ "machine": "arm64",
+ "started": "2026-11-17 20:22:15"
+}

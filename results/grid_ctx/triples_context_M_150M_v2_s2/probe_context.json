@@ -1,0 +1,32 @@
+{
+ "chain1/train": {
+  "n": 300,
+  "acc": 0.88,
+  "follows_edit": 0.8566666666666667,
+  "keeps_old_answer": 0.0,
+  "follows_edit_given_correct": 0.946969696969697
+ },
+ "chain1/test_iid": {
+  "n": 200,
+  "acc": 0.875,
+  "follows_edit": 0.855,
+  "keeps_old_answer": 0.0,
+  "follows_edit_given_correct": 0.9257142857142857
+ },
+ "trans_true/train": {
+  "n": 300,
+  "says_true_full_context": 0.97,
+  "says_true_proof_edges_removed": 0.38333333333333336
+ },
+ "trans_true/test_iid": {
+  "n": 266,
+  "says_true_full_context": 0.9924812030075187,
+  "says_true_proof_edges_removed": 0.36466165413533835
+ },
+ "trans_true/test_length": {
+  "n": 300,
+  "says_true_full_context": 0.9833333333333333,
+  "says_true_proof_edges_removed": 0.35
+ },
+ "pass": true
+}

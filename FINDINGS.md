@@ -1,8 +1,9 @@
 # Representations of Meaning: Findings and Conclusions
 
 This document summarizes what the prototype found. The full experimental log,
-design decisions, and every intermediate result are in `README.md`; run artifacts
-are in `runs/` (git-ignored, reproducible from seeds).
+design decisions, and every intermediate result are in `README.md`. Per-run
+summaries (configs, final results, learning curves, probe outputs) for all 121 runs
+are archived in `results/`.
 
 ## 1. The question
 
@@ -304,7 +305,12 @@ Parameter-matched (~8M) symbolic models, seeds with longest chain ≥ 4:
 - Code: `world/`, `encoders/`, `train/`. 272 tests: `uv run pytest`.
 - Every run is a YAML config plus dotted overrides, deterministic from seeds:
   `uv run python -m train.run configs/runs/base.yaml <overrides>`.
-- Seed-level reports: `uv run python -m train.analysis "<run glob>"`.
+- Seed-level reports: `uv run python -m train.analysis "<run glob>"`. These work on
+  the archived `results/` without retraining.
+- The exact launch commands are in `results/launch_commands.txt`. Queue them with
+  `scripts/run_chain.sh`.
+- Training is not bit-reproducible on GPU: identical runs diverge within 50 steps.
+  Re-runs reproduce success fractions, not each seed's outcome.
 - Probes: `uv run python -m train.probes {context,edit,lens} <run>`.
 - Baselines and prior strata: `uv run python -m train.baselines [--run <run>]`.
 - Memory safeguards (`train/memguard.py`) cap each process's MLX cache and memory

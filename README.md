@@ -1016,3 +1016,14 @@ then the longest chain per seed:
   - Against this, fixed-phrasing nested prose (relations also at growing offsets)
     generalizes to 4–6 hops. This needs mechanistic probing (logit lens / attention
     by position) rather than more ablations.
+
+
+## Archived results
+
+- `runs/` (checkpoints and predictions) was deleted after the study.
+- Per-run summaries for all 121 runs are in `results/`. See `results/README.md` for
+  the layout and for regenerating the tables with `train.analysis`.
+- Launch commands are in `results/launch_commands.txt`; the job-queue helper is
+  `scripts/run_chain.sh`.
+- Paths of the form `runs/<group>/...` in this README correspond to
+  `results/<group>/...`.

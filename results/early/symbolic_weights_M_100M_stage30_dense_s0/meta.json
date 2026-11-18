@@ -1,0 +1,14 @@
+{
+ "git_hash": "31287d2cd3e89fee7e0b9ff4c4000e6627c90dba",
+ "git_dirty": true,
+ "run_id": "symbolic_weights_M_100M_stage30_dense_s0",
+ "seed": 0,
+ "world_fingerprint": "38639ad32af5",
+ "n_params": 8013120,
+ "vocab_size": 1220,
+ "n_train_queries": 23938,
+ "mlx_version": "0.32.4",
+ "platform": "macOS-27.0.1-arm64-arm-64bit",
+ "machine": "arm64",
+ "started": "2026-11-17 09:08:15"
+}

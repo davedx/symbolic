@@ -1,0 +1,14 @@
+{
+ "git_hash": "84a42da45df7718973c03ed0f7ff193e6eccb0bd",
+ "git_dirty": false,
+ "run_id": "prose_context_M_150M_v2_lr3e-5_s1",
+ "seed": 1,
+ "world_fingerprint": "3cf75d634027",
+ "n_params": 8025280,
+ "vocab_size": 1258,
+ "n_train_queries": 23379,
+ "mlx_version": "0.32.4",
+ "platform": "macOS-27.0.1-arm64-arm-64bit",
+ "machine": "arm64",
+ "started": "2026-11-18 03:13:10"
+}

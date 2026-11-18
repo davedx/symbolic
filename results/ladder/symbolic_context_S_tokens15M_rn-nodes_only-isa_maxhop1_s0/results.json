@@ -1,0 +1,458 @@
+{
+ "run_id": "symbolic_context_S_tokens15M_rn-nodes_only-isa_maxhop1_s0",
+ "accuracy": {
+  "test_heldout_category": {
+   "acc": 0.15,
+   "n": 680
+  },
+  "test_heldout_category/exception": {
+   "acc": 0.044642857142857144,
+   "n": 112
+  },
+  "test_heldout_category/exception/1": {
+   "acc": 0.15625,
+   "n": 32
+  },
+  "test_heldout_category/exception/3": {
+   "acc": 0.0,
+   "n": 80
+  },
+  "test_heldout_category/form:chain": {
+   "acc": 0.0,
+   "n": 450
+  },
+  "test_heldout_category/form:chain/1": {
+   "acc": 0.0,
+   "n": 77
+  },
+  "test_heldout_category/form:chain/2": {
+   "acc": 0.0,
+   "n": 152
+  },
+  "test_heldout_category/form:chain/3": {
+   "acc": 0.0,
+   "n": 221
+  },
+  "test_heldout_category/form:prop": {
+   "acc": 0.4434782608695652,
+   "n": 230
+  },
+  "test_heldout_category/form:prop/1": {
+   "acc": 0.15625,
+   "n": 32
+  },
+  "test_heldout_category/form:prop/2": {
+   "acc": 0.72,
+   "n": 75
+  },
+  "test_heldout_category/form:prop/3": {
+   "acc": 0.34959349593495936,
+   "n": 123
+  },
+  "test_heldout_category/inherited": {
+   "acc": 0.8220338983050848,
+   "n": 118
+  },
+  "test_heldout_category/inherited/2": {
+   "acc": 0.72,
+   "n": 75
+  },
+  "test_heldout_category/inherited/3": {
+   "acc": 1.0,
+   "n": 43
+  },
+  "test_heldout_category/relation": {
+   "acc": 0.0,
+   "n": 450
+  },
+  "test_heldout_category/relation/1": {
+   "acc": 0.0,
+   "n": 77
+  },
+  "test_heldout_category/relation/2": {
+   "acc": 0.0,
+   "n": 152
+  },
+  "test_heldout_category/relation/3": {
+   "acc": 0.0,
+   "n": 221
+  },
+  "test_heldout_combo": {
+   "acc": 0.2962962962962963,
+   "n": 1053
+  },
+  "test_heldout_combo/direct": {
+   "acc": 0.5027322404371585,
+   "n": 183
+  },
+  "test_heldout_combo/direct/1": {
+   "acc": 0.5027322404371585,
+   "n": 183
+  },
+  "test_heldout_combo/exception": {
+   "acc": 0.4956521739130435,
+   "n": 115
+  },
+  "test_heldout_combo/exception/1": {
+   "acc": 0.40425531914893614,
+   "n": 47
+  },
+  "test_heldout_combo/exception/2": {
+   "acc": 0.7073170731707317,
+   "n": 41
+  },
+  "test_heldout_combo/exception/3": {
+   "acc": 0.3333333333333333,
+   "n": 27
+  },
+  "test_heldout_combo/form:chain": {
+   "acc": 0.0,
+   "n": 447
+  },
+  "test_heldout_combo/form:chain/1": {
+   "acc": 0.0,
+   "n": 80
+  },
+  "test_heldout_combo/form:chain/2": {
+   "acc": 0.0,
+   "n": 152
+  },
+  "test_heldout_combo/form:chain/3": {
+   "acc": 0.0,
+   "n": 215
+  },
+  "test_heldout_combo/form:prop": {
+   "acc": 0.5148514851485149,
+   "n": 606
+  },
+  "test_heldout_combo/form:prop/1": {
+   "acc": 0.4826086956521739,
+   "n": 230
+  },
+  "test_heldout_combo/form:prop/2": {
+   "acc": 0.5436893203883495,
+   "n": 206
+  },
+  "test_heldout_combo/form:prop/3": {
+   "acc": 0.5235294117647059,
+   "n": 170
+  },
+  "test_heldout_combo/inherited": {
+   "acc": 0.5292207792207793,
+   "n": 308
+  },
+  "test_heldout_combo/inherited/2": {
+   "acc": 0.503030303030303,
+   "n": 165
+  },
+  "test_heldout_combo/inherited/3": {
+   "acc": 0.5594405594405595,
+   "n": 143
+  },
+  "test_heldout_combo/relation": {
+   "acc": 0.0,
+   "n": 447
+  },
+  "test_heldout_combo/relation/1": {
+   "acc": 0.0,
+   "n": 80
+  },
+  "test_heldout_combo/relation/2": {
+   "acc": 0.0,
+   "n": 152
+  },
+  "test_heldout_combo/relation/3": {
+   "acc": 0.0,
+   "n": 215
+  },
+  "test_iid": {
+   "acc": 0.3972962823882839,
+   "n": 2663
+  },
+  "test_iid/direct": {
+   "acc": 0.5098901098901099,
+   "n": 455
+  },
+  "test_iid/direct/1": {
+   "acc": 0.5098901098901099,
+   "n": 455
+  },
+  "test_iid/exception": {
+   "acc": 0.34893617021276596,
+   "n": 235
+  },
+  "test_iid/exception/1": {
+   "acc": 0.3875,
+   "n": 80
+  },
+  "test_iid/exception/2": {
+   "acc": 0.3252032520325203,
+   "n": 123
+  },
+  "test_iid/exception/3": {
+   "acc": 0.34375,
+   "n": 32
+  },
+  "test_iid/form:chain": {
+   "acc": 0.0,
+   "n": 535
+  },
+  "test_iid/form:chain/1": {
+   "acc": 0.0,
+   "n": 204
+  },
+  "test_iid/form:chain/2": {
+   "acc": 0.0,
+   "n": 167
+  },
+  "test_iid/form:chain/3": {
+   "acc": 0.0,
+   "n": 164
+  },
+  "test_iid/form:isa": {
+   "acc": 0.4876325088339223,
+   "n": 566
+  },
+  "test_iid/form:isa/1": {
+   "acc": 0.4371584699453552,
+   "n": 183
+  },
+  "test_iid/form:isa/2": {
+   "acc": 0.489010989010989,
+   "n": 182
+  },
+  "test_iid/form:isa/3": {
+   "acc": 0.5323383084577115,
+   "n": 201
+  },
+  "test_iid/form:prop": {
+   "acc": 0.49510763209393344,
+   "n": 1022
+  },
+  "test_iid/form:prop/1": {
+   "acc": 0.5198863636363636,
+   "n": 352
+  },
+  "test_iid/form:prop/2": {
+   "acc": 0.449468085106383,
+   "n": 376
+  },
+  "test_iid/form:prop/3": {
+   "acc": 0.5238095238095238,
+   "n": 294
+  },
+  "test_iid/form:trans": {
+   "acc": 0.5111111111111111,
+   "n": 540
+  },
+  "test_iid/form:trans/1": {
+   "acc": 0.470873786407767,
+   "n": 206
+  },
+  "test_iid/form:trans/2": {
+   "acc": 0.46551724137931033,
+   "n": 174
+  },
+  "test_iid/form:trans/3": {
+   "acc": 0.6125,
+   "n": 160
+  },
+  "test_iid/inherited": {
+   "acc": 0.5211581291759465,
+   "n": 898
+  },
+  "test_iid/inherited/2": {
+   "acc": 0.5011494252873563,
+   "n": 435
+  },
+  "test_iid/inherited/3": {
+   "acc": 0.5399568034557235,
+   "n": 463
+  },
+  "test_iid/relation": {
+   "acc": 0.2567441860465116,
+   "n": 1075
+  },
+  "test_iid/relation/1": {
+   "acc": 0.23658536585365852,
+   "n": 410
+  },
+  "test_iid/relation/2": {
+   "acc": 0.2375366568914956,
+   "n": 341
+  },
+  "test_iid/relation/3": {
+   "acc": 0.30246913580246915,
+   "n": 324
+  },
+  "test_length": {
+   "acc": 0.4229490357293997,
+   "n": 16541
+  },
+  "test_length/exception": {
+   "acc": 0.25914634146341464,
+   "n": 328
+  },
+  "test_length/exception/4": {
+   "acc": 0.25914634146341464,
+   "n": 328
+  },
+  "test_length/form:chain": {
+   "acc": 0.0,
+   "n": 3827
+  },
+  "test_length/form:chain/4": {
+   "acc": 0.0,
+   "n": 1388
+  },
+  "test_length/form:chain/5": {
+   "acc": 0.0,
+   "n": 1262
+  },
+  "test_length/form:chain/6": {
+   "acc": 0.0,
+   "n": 1177
+  },
+  "test_length/form:isa": {
+   "acc": 0.5,
+   "n": 2148
+  },
+  "test_length/form:isa/4": {
+   "acc": 0.5,
+   "n": 1380
+  },
+  "test_length/form:isa/5": {
+   "acc": 0.5,
+   "n": 768
+  },
+  "test_length/form:prop": {
+   "acc": 0.5941367118444314,
+   "n": 6788
+  },
+  "test_length/form:prop/4": {
+   "acc": 0.5373493975903615,
+   "n": 3320
+  },
+  "test_length/form:prop/5": {
+   "acc": 0.6421178343949044,
+   "n": 2512
+  },
+  "test_length/form:prop/6": {
+   "acc": 0.6652719665271967,
+   "n": 956
+  },
+  "test_length/form:trans": {
+   "acc": 0.5,
+   "n": 3778
+  },
+  "test_length/form:trans/4": {
+   "acc": 0.5,
+   "n": 1428
+  },
+  "test_length/form:trans/5": {
+   "acc": 0.5,
+   "n": 1256
+  },
+  "test_length/form:trans/6": {
+   "acc": 0.5,
+   "n": 1094
+  },
+  "test_length/inherited": {
+   "acc": 0.583410780669145,
+   "n": 8608
+  },
+  "test_length/inherited/4": {
+   "acc": 0.5464318389752973,
+   "n": 4372
+  },
+  "test_length/inherited/5": {
+   "acc": 0.6088414634146342,
+   "n": 3280
+  },
+  "test_length/inherited/6": {
+   "acc": 0.6652719665271967,
+   "n": 956
+  },
+  "test_length/relation": {
+   "acc": 0.24838921761998686,
+   "n": 7605
+  },
+  "test_length/relation/4": {
+   "acc": 0.25355113636363635,
+   "n": 2816
+  },
+  "test_length/relation/5": {
+   "acc": 0.2494042891183479,
+   "n": 2518
+  },
+  "test_length/relation/6": {
+   "acc": 0.2408630559225011,
+   "n": 2271
+  },
+  "train": {
+   "acc": 0.5063291139240507,
+   "n": 1817
+  },
+  "train/direct": {
+   "acc": 0.5063291139240507,
+   "n": 1817
+  },
+  "train/direct/1": {
+   "acc": 0.5063291139240507,
+   "n": 1817
+  },
+  "train/form:isa": {
+   "acc": 0.5063291139240507,
+   "n": 1817
+  },
+  "train/form:isa/1": {
+   "acc": 0.5063291139240507,
+   "n": 1817
+  }
+ },
+ "kb_recall": {
+  "all": {
+   "acc": 0.0,
+   "n": 2891
+  },
+  "isa": {
+   "acc": 0.0,
+   "n": 296
+  },
+  "prop:categorical": {
+   "acc": 0.0,
+   "n": 32
+  },
+  "rel:functional": {
+   "acc": 0.0,
+   "n": 1805
+  },
+  "rel:inverse": {
+   "acc": 0.0,
+   "n": 287
+  },
+  "rel:symmetric": {
+   "acc": 0.0,
+   "n": 140
+  },
+  "rel:transitive": {
+   "acc": 0.0,
+   "n": 314
+  },
+  "sub": {
+   "acc": 0.0,
+   "n": 17
+  }
+ },
+ "peak_memory_gb": 1.5035443678498268,
+ "counters": {
+  "step": 2304,
+  "tokens": 15003198,
+  "kb_facts": 0,
+  "queries": 312977,
+  "ctx_facts": 2190839,
+  "wall": 62.07545070700053,
+  "next_eval": 10
+ },
+ "n_params": 2005440
+}

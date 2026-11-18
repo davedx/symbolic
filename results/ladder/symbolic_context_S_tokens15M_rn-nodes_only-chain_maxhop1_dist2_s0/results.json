@@ -1,0 +1,458 @@
+{
+ "run_id": "symbolic_context_S_tokens15M_rn-nodes_only-chain_maxhop1_dist2_s0",
+ "accuracy": {
+  "test_heldout_category": {
+   "acc": 0.14411764705882352,
+   "n": 680
+  },
+  "test_heldout_category/exception": {
+   "acc": 0.0,
+   "n": 112
+  },
+  "test_heldout_category/exception/1": {
+   "acc": 0.0,
+   "n": 32
+  },
+  "test_heldout_category/exception/3": {
+   "acc": 0.0,
+   "n": 80
+  },
+  "test_heldout_category/form:chain": {
+   "acc": 0.21777777777777776,
+   "n": 450
+  },
+  "test_heldout_category/form:chain/1": {
+   "acc": 0.6103896103896104,
+   "n": 77
+  },
+  "test_heldout_category/form:chain/2": {
+   "acc": 0.15789473684210525,
+   "n": 152
+  },
+  "test_heldout_category/form:chain/3": {
+   "acc": 0.12217194570135746,
+   "n": 221
+  },
+  "test_heldout_category/form:prop": {
+   "acc": 0.0,
+   "n": 230
+  },
+  "test_heldout_category/form:prop/1": {
+   "acc": 0.0,
+   "n": 32
+  },
+  "test_heldout_category/form:prop/2": {
+   "acc": 0.0,
+   "n": 75
+  },
+  "test_heldout_category/form:prop/3": {
+   "acc": 0.0,
+   "n": 123
+  },
+  "test_heldout_category/inherited": {
+   "acc": 0.0,
+   "n": 118
+  },
+  "test_heldout_category/inherited/2": {
+   "acc": 0.0,
+   "n": 75
+  },
+  "test_heldout_category/inherited/3": {
+   "acc": 0.0,
+   "n": 43
+  },
+  "test_heldout_category/relation": {
+   "acc": 0.21777777777777776,
+   "n": 450
+  },
+  "test_heldout_category/relation/1": {
+   "acc": 0.6103896103896104,
+   "n": 77
+  },
+  "test_heldout_category/relation/2": {
+   "acc": 0.15789473684210525,
+   "n": 152
+  },
+  "test_heldout_category/relation/3": {
+   "acc": 0.12217194570135746,
+   "n": 221
+  },
+  "test_heldout_combo": {
+   "acc": 0.1120607787274454,
+   "n": 1053
+  },
+  "test_heldout_combo/direct": {
+   "acc": 0.0,
+   "n": 183
+  },
+  "test_heldout_combo/direct/1": {
+   "acc": 0.0,
+   "n": 183
+  },
+  "test_heldout_combo/exception": {
+   "acc": 0.0,
+   "n": 115
+  },
+  "test_heldout_combo/exception/1": {
+   "acc": 0.0,
+   "n": 47
+  },
+  "test_heldout_combo/exception/2": {
+   "acc": 0.0,
+   "n": 41
+  },
+  "test_heldout_combo/exception/3": {
+   "acc": 0.0,
+   "n": 27
+  },
+  "test_heldout_combo/form:chain": {
+   "acc": 0.2639821029082774,
+   "n": 447
+  },
+  "test_heldout_combo/form:chain/1": {
+   "acc": 0.8125,
+   "n": 80
+  },
+  "test_heldout_combo/form:chain/2": {
+   "acc": 0.23684210526315788,
+   "n": 152
+  },
+  "test_heldout_combo/form:chain/3": {
+   "acc": 0.07906976744186046,
+   "n": 215
+  },
+  "test_heldout_combo/form:prop": {
+   "acc": 0.0,
+   "n": 606
+  },
+  "test_heldout_combo/form:prop/1": {
+   "acc": 0.0,
+   "n": 230
+  },
+  "test_heldout_combo/form:prop/2": {
+   "acc": 0.0,
+   "n": 206
+  },
+  "test_heldout_combo/form:prop/3": {
+   "acc": 0.0,
+   "n": 170
+  },
+  "test_heldout_combo/inherited": {
+   "acc": 0.0,
+   "n": 308
+  },
+  "test_heldout_combo/inherited/2": {
+   "acc": 0.0,
+   "n": 165
+  },
+  "test_heldout_combo/inherited/3": {
+   "acc": 0.0,
+   "n": 143
+  },
+  "test_heldout_combo/relation": {
+   "acc": 0.2639821029082774,
+   "n": 447
+  },
+  "test_heldout_combo/relation/1": {
+   "acc": 0.8125,
+   "n": 80
+  },
+  "test_heldout_combo/relation/2": {
+   "acc": 0.23684210526315788,
+   "n": 152
+  },
+  "test_heldout_combo/relation/3": {
+   "acc": 0.07906976744186046,
+   "n": 215
+  },
+  "test_iid": {
+   "acc": 0.07698084866691701,
+   "n": 2663
+  },
+  "test_iid/direct": {
+   "acc": 0.0,
+   "n": 455
+  },
+  "test_iid/direct/1": {
+   "acc": 0.0,
+   "n": 455
+  },
+  "test_iid/exception": {
+   "acc": 0.0,
+   "n": 235
+  },
+  "test_iid/exception/1": {
+   "acc": 0.0,
+   "n": 80
+  },
+  "test_iid/exception/2": {
+   "acc": 0.0,
+   "n": 123
+  },
+  "test_iid/exception/3": {
+   "acc": 0.0,
+   "n": 32
+  },
+  "test_iid/form:chain": {
+   "acc": 0.38317757009345793,
+   "n": 535
+  },
+  "test_iid/form:chain/1": {
+   "acc": 0.7254901960784313,
+   "n": 204
+  },
+  "test_iid/form:chain/2": {
+   "acc": 0.2155688622754491,
+   "n": 167
+  },
+  "test_iid/form:chain/3": {
+   "acc": 0.12804878048780488,
+   "n": 164
+  },
+  "test_iid/form:isa": {
+   "acc": 0.0,
+   "n": 566
+  },
+  "test_iid/form:isa/1": {
+   "acc": 0.0,
+   "n": 183
+  },
+  "test_iid/form:isa/2": {
+   "acc": 0.0,
+   "n": 182
+  },
+  "test_iid/form:isa/3": {
+   "acc": 0.0,
+   "n": 201
+  },
+  "test_iid/form:prop": {
+   "acc": 0.0,
+   "n": 1022
+  },
+  "test_iid/form:prop/1": {
+   "acc": 0.0,
+   "n": 352
+  },
+  "test_iid/form:prop/2": {
+   "acc": 0.0,
+   "n": 376
+  },
+  "test_iid/form:prop/3": {
+   "acc": 0.0,
+   "n": 294
+  },
+  "test_iid/form:trans": {
+   "acc": 0.0,
+   "n": 540
+  },
+  "test_iid/form:trans/1": {
+   "acc": 0.0,
+   "n": 206
+  },
+  "test_iid/form:trans/2": {
+   "acc": 0.0,
+   "n": 174
+  },
+  "test_iid/form:trans/3": {
+   "acc": 0.0,
+   "n": 160
+  },
+  "test_iid/inherited": {
+   "acc": 0.0,
+   "n": 898
+  },
+  "test_iid/inherited/2": {
+   "acc": 0.0,
+   "n": 435
+  },
+  "test_iid/inherited/3": {
+   "acc": 0.0,
+   "n": 463
+  },
+  "test_iid/relation": {
+   "acc": 0.19069767441860466,
+   "n": 1075
+  },
+  "test_iid/relation/1": {
+   "acc": 0.36097560975609755,
+   "n": 410
+  },
+  "test_iid/relation/2": {
+   "acc": 0.10557184750733138,
+   "n": 341
+  },
+  "test_iid/relation/3": {
+   "acc": 0.06481481481481481,
+   "n": 324
+  },
+  "test_length": {
+   "acc": 0.013663019164500332,
+   "n": 16541
+  },
+  "test_length/exception": {
+   "acc": 0.0,
+   "n": 328
+  },
+  "test_length/exception/4": {
+   "acc": 0.0,
+   "n": 328
+  },
+  "test_length/form:chain": {
+   "acc": 0.059054089365037886,
+   "n": 3827
+  },
+  "test_length/form:chain/4": {
+   "acc": 0.08789625360230548,
+   "n": 1388
+  },
+  "test_length/form:chain/5": {
+   "acc": 0.043581616481774964,
+   "n": 1262
+  },
+  "test_length/form:chain/6": {
+   "acc": 0.041631265930331354,
+   "n": 1177
+  },
+  "test_length/form:isa": {
+   "acc": 0.0,
+   "n": 2148
+  },
+  "test_length/form:isa/4": {
+   "acc": 0.0,
+   "n": 1380
+  },
+  "test_length/form:isa/5": {
+   "acc": 0.0,
+   "n": 768
+  },
+  "test_length/form:prop": {
+   "acc": 0.0,
+   "n": 6788
+  },
+  "test_length/form:prop/4": {
+   "acc": 0.0,
+   "n": 3320
+  },
+  "test_length/form:prop/5": {
+   "acc": 0.0,
+   "n": 2512
+  },
+  "test_length/form:prop/6": {
+   "acc": 0.0,
+   "n": 956
+  },
+  "test_length/form:trans": {
+   "acc": 0.0,
+   "n": 3778
+  },
+  "test_length/form:trans/4": {
+   "acc": 0.0,
+   "n": 1428
+  },
+  "test_length/form:trans/5": {
+   "acc": 0.0,
+   "n": 1256
+  },
+  "test_length/form:trans/6": {
+   "acc": 0.0,
+   "n": 1094
+  },
+  "test_length/inherited": {
+   "acc": 0.0,
+   "n": 8608
+  },
+  "test_length/inherited/4": {
+   "acc": 0.0,
+   "n": 4372
+  },
+  "test_length/inherited/5": {
+   "acc": 0.0,
+   "n": 3280
+  },
+  "test_length/inherited/6": {
+   "acc": 0.0,
+   "n": 956
+  },
+  "test_length/relation": {
+   "acc": 0.029717291255752794,
+   "n": 7605
+  },
+  "test_length/relation/4": {
+   "acc": 0.04332386363636364,
+   "n": 2816
+  },
+  "test_length/relation/5": {
+   "acc": 0.021842732327243843,
+   "n": 2518
+  },
+  "test_length/relation/6": {
+   "acc": 0.02157639806252752,
+   "n": 2271
+  },
+  "train": {
+   "acc": 0.7069282648681791,
+   "n": 1631
+  },
+  "train/form:chain": {
+   "acc": 0.7069282648681791,
+   "n": 1631
+  },
+  "train/form:chain/1": {
+   "acc": 0.7069282648681791,
+   "n": 1631
+  },
+  "train/relation": {
+   "acc": 0.7069282648681791,
+   "n": 1631
+  },
+  "train/relation/1": {
+   "acc": 0.7069282648681791,
+   "n": 1631
+  }
+ },
+ "kb_recall": {
+  "all": {
+   "acc": 0.0,
+   "n": 2891
+  },
+  "isa": {
+   "acc": 0.0,
+   "n": 296
+  },
+  "prop:categorical": {
+   "acc": 0.0,
+   "n": 32
+  },
+  "rel:functional": {
+   "acc": 0.0,
+   "n": 1805
+  },
+  "rel:inverse": {
+   "acc": 0.0,
+   "n": 287
+  },
+  "rel:symmetric": {
+   "acc": 0.0,
+   "n": 140
+  },
+  "rel:transitive": {
+   "acc": 0.0,
+   "n": 314
+  },
+  "sub": {
+   "acc": 0.0,
+   "n": 17
+  }
+ },
+ "peak_memory_gb": 1.3836575783789158,
+ "counters": {
+  "step": 2504,
+  "tokens": 15002052,
+  "kb_facts": 0,
+  "queries": 583386,
+  "ctx_facts": 1750158,
+  "wall": 63.03833708500042,
+  "next_eval": 10
+ },
+ "n_params": 2005440
+}

@@ -1,0 +1,48 @@
+run_id: symbolic_weights_L12d224_100M_s0
+world: configs/world/default.yaml
+data:
+  encoding: symbolic
+  regime: weights
+  proof: none
+  n_distractors: 6
+  related_fraction: 0.5
+  paraphrase: resample
+  kb_facts_per_doc: 16
+  rename: none
+  seed: 0
+model:
+  vocab_size: 1220
+  size: null
+  n_layers: 12
+  d_model: 224
+  n_heads: 4
+  mlp: swiglu
+  rope_base: 10000.0
+  max_len: 1024
+  init_std: 0.02
+  compute_dtype: float32
+train:
+  seed: 0
+  budget_kind: tokens
+  budget: 100000000
+  max_batch_tokens: 8192
+  max_batch_size: 512
+  bucket: 16
+  lr: 0.001
+  min_lr_ratio: 0.1
+  warmup_frac: 0.02
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  grad_clip: 1.0
+  stage1_frac: 0.1
+  kb_per_query_epoch: 1.0
+  label_shuffle: false
+  train_subset: 0
+  n_evals: 20
+  eval_max_per_split: 1000
+  final_eval_max_per_split: 0
+  eval_batch_size: 256
+  log_every: 50
+  ckpt_every: 1000
+  compile: true

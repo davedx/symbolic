@@ -1,0 +1,53 @@
+run_id: triples_unmarked_context_M_150M_v2_s0
+world: configs/world/v2.yaml
+data:
+  encoding: triples_unmarked
+  regime: context
+  proof: none
+  n_distractors: 6
+  distractor_ramp_epochs: 10
+  distractor_ramp_start: 0
+  related_fraction: 0.5
+  paraphrase: resample
+  kb_facts_per_doc: 16
+  rename: nodes
+  ctx_loss: false
+  seed: 0
+model:
+  vocab_size: 1222
+  size: M
+  n_layers: 4
+  d_model: 192
+  n_heads: 4
+  mlp: swiglu
+  rope_base: 10000.0
+  max_len: 1024
+  init_std: 0.02
+  compute_dtype: float32
+train:
+  seed: 0
+  budget_kind: tokens
+  budget: 150000000
+  max_batch_tokens: 8192
+  max_batch_size: 512
+  bucket: 16
+  lr: 0.0001
+  min_lr_ratio: 0.1
+  warmup_frac: 0.02
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  grad_clip: 1.0
+  stage1_frac: 0.1
+  kb_per_query_epoch: 1.0
+  label_shuffle: false
+  train_subset: 0
+  train_forms: []
+  train_max_hops: 0
+  n_evals: 30
+  eval_max_per_split: 1000
+  final_eval_max_per_split: 0
+  eval_batch_size: 256
+  log_every: 50
+  ckpt_every: 1000
+  compile: true
