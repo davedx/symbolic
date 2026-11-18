@@ -921,3 +921,33 @@ numbers are test_iid unless marked "4–6 hops" (test_length). Mean (sd) over 3 
   - The gain is small compared with fact-shaped steps with explicit placeholders
     (symbolic .05 → symbolic_flat .45–.59).
   - Execution order alone helps a little; per-hop slots help much more.
+
+**3 × 2 grid result** (5 seeds per cell; M, lr 1e-4, wd 0.1, 150M tokens). Each cell
+gives the seeds that acquire isa / trans (> .9) and the seeds whose longest chain
+solved at ≥ 50% is ≥ 4 hops, i.e. beyond the training maximum of 3:
+
+| facts \ questions | nested | step-by-step |
+|---|---|---|
+| prose | isa 0/5 · trans 0/5 · ≥4 hops 0/5 (longest 1,1,2,1,1) | isa 0/5 · trans 0/5 · ≥4 hops 0/5 (1,1,1,1,3) |
+| symbolic | isa 4/5 · trans 2/5 · ≥4 hops 0/5 (3,3,3,3,3) | isa 2/5 · trans 2/5 · ≥4 hops **4/5** (4,3,6,6,6) |
+| triples | isa 3/5 · trans 2/5 · ≥4 hops 1/5 (6,1,2,1,2) | isa 5/5 · trans 5/5 · ≥4 hops **5/5** (6,6,6,5,6) |
+
+- **Question format is the main effect on chain length generalization.** It
+  replicates in two fact formats: step vs nested 4/5 vs 0/5 for symbolic, 5/5 vs
+  1/5 for triples (Fisher p = .048 each).
+- **No reliable fact-format effect.** Pooled over question formats, trans success
+  is triples 7/10 vs symbolic 4/10 (p = .37), and isa 8/10 vs 6/10 (p = .63).
+  - Triples' 5/5 on trans occurs only with step-by-step chain queries; with nested
+    chain queries it falls to 2/5.
+  - Trans queries are rendered identically in both, so the chain-query format
+    appears to shape which in-context circuits form overall: an interaction, not a
+    fact-format advantage.
+- **Prose gets no benefit from step-by-step queries.** 1-hop chains are ~.6 against
+  ~.85 elsewhere, and booleans 0/10.
+  - Prime suspect: paraphrase variability. Prose facts and query steps each draw
+    one of three phrasings independently, so a step often has to match a
+    differently phrased fact.
+  - Test: `data.paraphrase=fixed` (one phrasing everywhere), prose and prose_flat,
+    3 seeds each (`runs/grid_ctx/prose*_fixedpara_*`).
+- **Truncation flags.** Failed seeds still rising at 150M in prose_flat (trans 2,
+  isa 1) and triples_nested (isa 2, trans 1).
