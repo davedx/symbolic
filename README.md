@@ -755,9 +755,36 @@ numbers are test_iid unless marked "4–6 hops" (test_length). Mean (sd) over 3 
   plateau).
 - Caveats: 3 seeds; lr tuned on one encoding; tokens-matched budgets (prose sees
   16% fewer queries than symbolic).
-- Working hypothesis for triples' advantage: explicit role markers
-  (`<s>`/`<r>`/`<o>`) give every fact slot a fixed tag to match on, which supports
-  compositional lookup. This is testable by ablation.
+- **Per-encoding lr** (`runs/grid_ctx_lr/`, 2 seeds each; same config otherwise):
+
+  | encoding, lr | bool | chain | notes |
+  |---|---|---|---|
+  | prose 3e-5 | 0/2 | 2/2 | 1-hop .56–.58, 2-hop .24 |
+  | prose 1e-4 | 0/3 | 3/3 | 1-hop .71 |
+  | prose 3e-4 | 1/2 | 1/2 | s0: isa 1.00, trans .97, 4–6 hops trans .97, but chain .50 |
+  | symbolic 3e-5 | 0/2 | 2/2 | everything weaker than at 1e-4 |
+  | symbolic 1e-4 | 1/3 | 3/3 | |
+  | triples 1e-4 | **3/3** | **3/3** | 4–6 hops chain .59 |
+
+  - Prose *can* acquire the boolean skill (s0 at 3e-4), so its plateau is not
+    inherent to the encoding.
+  - But no tested lr makes prose or symbolic reliable, and neither ever
+    length-generalizes chains (4–6 hops ≤ .08 in these runs).
+  - Triples' advantage holds even though the other two got more tuning.
+- **Why triples?** The encodings differ in how they write **chain queries**, not only
+  in role markers:
+  - triples spells a k-hop chain as k fact-shaped patterns in execution order,
+    joined by variables: `<s> e <r> r1 <o> ?x1 <s> ?x1 <r> r2 <o> ?`;
+  - symbolic nests it outermost-first: `? ( r2 ( r1 e ) )`;
+  - prose nests it in words: "the r2 of the r1 of e".
+  - With triples, a longer chain is "more of the same step" in the query, and each
+    step has exactly the shape of a context fact.
+- **Ablation** `symbolic_flat` (`encoders/symbolic.py`): symbolic in every respect
+  except that chains are written as fact-shaped steps,
+  `? ( r1 e ?x1 ) ( r2 ?x1 ? )`.
+  - If it length-generalizes like triples, query decomposition (not role markers)
+    explains triples' advantage.
+  - Runs: `runs/grid_ctx/symbolic_flat_context_M_150M_v2_s*`, same config.
 
 #### Held-out category split
 

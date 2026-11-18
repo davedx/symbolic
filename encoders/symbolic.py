@@ -46,3 +46,27 @@ class SymbolicEncoder(Encoder):
 
     def tokenize(self, text: str) -> list[str]:
         return re.findall(r"[()]|[^\s()]+", text)
+
+
+class SymbolicFlatEncoder(SymbolicEncoder):
+    """Ablation of encoding B: chain queries as a sequence of fact-shaped steps.
+
+        ? ( r1 rex ?x1 ) ( r2 ?x1 ? )   instead of   ? ( r2 ( r1 rex ) )
+
+    Everything else is identical to SymbolicEncoder. The triples encoding writes chains
+    this way (one fact-shaped pattern per hop, in execution order, joined by variables),
+    and it is the only encoding whose chains length-generalize in the context regime.
+    This variant separates that query decomposition from triples' other differences
+    (role markers, argument order). See README, "Grid slice 1".
+    """
+
+    name = "symbolic_flat"
+
+    def chain_templates(self, k: int) -> list[str]:
+        parts = []
+        subj = "{e:entity}"
+        for i in range(1, k + 1):
+            obj = "?" if i == k else f"?x{i}"
+            parts.append(f"( {{r{i}:frel}} {subj} {obj} )")
+            subj = obj
+        return ["? " + " ".join(parts)]

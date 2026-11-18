@@ -86,7 +86,10 @@ def test_all_encodings_parse_to_same_query(setup):
         parsed = {n: e.parse_query(e.query(q.form, q.args)) for n, e in encs.items()}
         assert len(set(parsed.values())) == 1
         surfaces = {n: tuple(e.query(q.form, q.args)) for n, e in encs.items()}
-        assert len(set(surfaces.values())) == len(encs)  # genuinely different renderings
+        main = ["prose", "symbolic", "triples"]
+        assert len({surfaces[n] for n in main}) == len(main)  # genuinely different renderings
+        if "symbolic_flat" in surfaces:  # ablation: differs from symbolic only in chain queries
+            assert (surfaces["symbolic_flat"] != surfaces["symbolic"]) == (q.form == "chain")
 
 
 def test_variant_counts(tiny, encs_tiny):

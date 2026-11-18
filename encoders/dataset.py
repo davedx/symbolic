@@ -33,10 +33,15 @@ from world.queries import Query
 
 from .base import ANS, BOS, CTX, EOS, PROOF, QUERY, Encoder, stable_int
 from .prose import ProseEncoder
-from .symbolic import SymbolicEncoder
+from .symbolic import SymbolicEncoder, SymbolicFlatEncoder
 from .triples import TriplesEncoder
 
-ENCODERS = {"prose": ProseEncoder, "symbolic": SymbolicEncoder, "triples": TriplesEncoder}
+ENCODERS = {
+    "prose": ProseEncoder,
+    "symbolic": SymbolicEncoder,
+    "triples": TriplesEncoder,
+    "symbolic_flat": SymbolicFlatEncoder,  # ablation: decomposed chain queries
+}
 
 
 def make_encoder(name: str, world: World) -> Encoder:
