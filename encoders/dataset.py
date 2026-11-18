@@ -33,7 +33,7 @@ from world.queries import Query
 
 from .base import ANS, BOS, CTX, EOS, PROOF, QUERY, Encoder, stable_int
 from .prose import ProseEncoder, ProseFlatEncoder
-from .symbolic import SymbolicEncoder, SymbolicFlatEncoder
+from .symbolic import SymbolicEncoder, SymbolicFlatEncoder, SymbolicPathEncoder
 from .triples import TriplesEncoder, TriplesNestedEncoder, TriplesUnmarkedEncoder
 
 ENCODERS = {
@@ -44,6 +44,7 @@ ENCODERS = {
     "triples_unmarked": TriplesUnmarkedEncoder,  # ablation: no role markers
     "prose_flat": ProseFlatEncoder,  # grid: prose facts, step-by-step chain queries
     "triples_nested": TriplesNestedEncoder,  # grid: triples facts, nested chain queries
+    "symbolic_path": SymbolicPathEncoder,  # ablation: nested order, single bracket pair
 }
 
 

@@ -90,7 +90,7 @@ def test_all_encodings_parse_to_same_query(setup):
         assert len({surfaces[n] for n in main}) == len(main)  # genuinely different renderings
         if "symbolic_flat" in surfaces:  # ablation: differs from symbolic only in chain queries
             assert (surfaces["symbolic_flat"] != surfaces["symbolic"]) == (q.form == "chain")
-        for abl, base in (("prose_flat", "prose"), ("triples_nested", "triples")):  # differ only in chains
+        for abl, base in (("prose_flat", "prose"), ("triples_nested", "triples"), ("symbolic_path", "symbolic")):
             if abl in surfaces:
                 same = encs[abl].query(q.form, q.args) == encs[base].query(q.form, q.args)
                 assert same == (q.form != "chain")

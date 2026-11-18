@@ -70,3 +70,23 @@ class SymbolicFlatEncoder(SymbolicEncoder):
             parts.append(f"( {{r{i}:frel}} {subj} {obj} )")
             subj = obj
         return ["? " + " ".join(parts)]
+
+
+class SymbolicPathEncoder(SymbolicEncoder):
+    """Ablation of encoding B: nested chain queries without nested brackets.
+
+        ? ( r3 r2 r1 rex )   instead of   ? ( r3 ( r2 ( r1 rex ) ) )
+
+    Same outermost-first order and the same relation and entity tokens as
+    SymbolicEncoder, but the query ends with a single ")" whatever the chain length.
+    The nested form ends with one ")" per hop, so a 4-6 hop query ends in a run of
+    closers never seen in training (max 3 hops); nested prose, which ends with one "?",
+    length-generalizes when paraphrases are fixed. This variant tests whether the
+    run of closing brackets is what caps nested symbolic chains at 3 hops (README).
+    """
+
+    name = "symbolic_path"
+
+    def chain_templates(self, k: int) -> list[str]:
+        rels = " ".join(f"{{r{i}:frel}}" for i in range(k, 0, -1))  # outermost first
+        return [f"? ( {rels} {{e:entity}} )"]

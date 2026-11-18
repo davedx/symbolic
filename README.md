@@ -951,3 +951,37 @@ solved at ≥ 50% is ≥ 4 hops, i.e. beyond the training maximum of 3:
     3 seeds each (`runs/grid_ctx/prose*_fixedpara_*`).
 - **Truncation flags.** Failed seeds still rising at 150M in prose_flat (trans 2,
   isa 1) and triples_nested (isa 2, trans 1).
+
+**Prose with fixed paraphrases** (`data.paraphrase=fixed`: facts and queries use one
+phrasing each; 3 seeds):
+
+| | longest chain per seed | 1-hop |
+|---|---|---|
+| prose nested, fixed | **5, 6, 4** | .85–.86 |
+| prose step-by-step, fixed (2 of 3 seeds) | 3, 5 | .86–.88 |
+| prose nested, paraphrased (for reference) | 1–2 | ~.6 |
+
+- The prose deficit is **paraphrase variability** (surface mismatch between
+  independently paraphrased facts and queries), not prose as such.
+- With fixed phrasing, **nested prose length-generalizes to 4–6 hops**, which
+  contradicts "nested queries cap chain length" as a general claim.
+
+**Depth (partial).** Nested symbolic, longest chain per seed:
+
+| layers | longest chain per seed |
+|---|---|
+| 4 | 2, 5, 3 |
+| 6 | 3, 3, 3, 3, 3 |
+| 8 | 3, 3, 3 |
+
+- Depth does **not** extend nested chains so far; the prediction is not supported.
+  L2 and the step-by-step runs are pending.
+- Depth does help the boolean skills: L8 gets isa 3/3 and trans 3/3, vs L6 trans
+  2/5 and L4 trans 0/3.
+
+**New hypothesis: a surface-length artifact.**
+- Nested symbolic and nested triples end a k-hop query with k closing brackets, so
+  a 4–6-hop query ends in a run of closers never seen in training (max 3).
+- Nested prose ends with a single `?` and generalizes.
+- Test: `symbolic_path` (`? ( r3 r2 r1 e )`: same outermost-first order, one
+  bracket pair), 3 seeds (`runs/grid_ctx/symbolic_path_*`).
