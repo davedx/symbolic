@@ -86,10 +86,14 @@ def test_all_encodings_parse_to_same_query(setup):
         parsed = {n: e.parse_query(e.query(q.form, q.args)) for n, e in encs.items()}
         assert len(set(parsed.values())) == 1
         surfaces = {n: tuple(e.query(q.form, q.args)) for n, e in encs.items()}
-        main = ["prose", "symbolic", "triples"]
+        main = ["prose", "symbolic", "triples"]  # ablation variants may coincide with these off-chain
         assert len({surfaces[n] for n in main}) == len(main)  # genuinely different renderings
         if "symbolic_flat" in surfaces:  # ablation: differs from symbolic only in chain queries
             assert (surfaces["symbolic_flat"] != surfaces["symbolic"]) == (q.form == "chain")
+        for abl, base in (("prose_flat", "prose"), ("triples_nested", "triples")):  # differ only in chains
+            if abl in surfaces:
+                same = encs[abl].query(q.form, q.args) == encs[base].query(q.form, q.args)
+                assert same == (q.form != "chain")
         if "triples_unmarked" in surfaces:  # ablation: triples without role markers
             assert not {"<s>", "<r>", "<o>"} & set(surfaces["triples_unmarked"])
             assert surfaces["triples_unmarked"] != surfaces["triples"]

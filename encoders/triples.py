@@ -70,3 +70,23 @@ class TriplesUnmarkedEncoder(TriplesEncoder):
 
     def chain_templates(self, k: int) -> list[str]:
         return [_unmark(t) for t in super().chain_templates(k)]
+
+
+class TriplesNestedEncoder(TriplesEncoder):
+    """Ablation of encoding C: chain queries nested outermost-first (no join variables).
+
+        <q> ( <r> r2 <s> ( <r> r1 <s> rex ) ) <o> ?
+
+    instead of "<q> <s> rex <r> r1 <o> ?x1 <s> ?x1 <r> r2 <o> ?". This matches how symbolic
+    ("? ( r2 ( r1 rex ) )") and prose ("the r2 of the r1 of rex") write chains. Facts
+    and all other queries are identical to TriplesEncoder. Part of the fact-format x
+    question-format grid (README, "Grid slice 1").
+    """
+
+    name = "triples_nested"
+
+    def chain_templates(self, k: int) -> list[str]:
+        inner = "{e:entity}"
+        for i in range(1, k + 1):
+            inner = f"( <r> {{r{i}:frel}} <s> {inner} )"
+        return [f"<q> {inner} <o> ?"]

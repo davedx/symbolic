@@ -96,3 +96,32 @@ class ProseEncoder(Encoder):
 
     def tokenize(self, text: str) -> list[str]:
         return re.findall(r"[^\s.?,]+|[.?,]", text)
+
+
+class ProseFlatEncoder(ProseEncoder):
+    """Ablation of encoding A: chain queries as fact-shaped steps in execution order.
+
+        the r1 of rex is x1 . the r2 of x1 is who ?      (and two paraphrases)
+
+    instead of the nested "who is the r2 of the r1 of rex ?". Each hop is one
+    fact-shaped clause whose object is a placeholder word (x1, x2, ...) that the model
+    must fill; the last clause asks for the answer. Everything else is identical to
+    ProseEncoder. Part of the fact-format x question-format grid (README, "Grid slice 1").
+    """
+
+    name = "prose_flat"
+
+    def chain_templates(self, k: int) -> list[str]:
+        def steps(final, mid):
+            out, subj = [], "{e:entity}"
+            for i in range(1, k + 1):
+                obj = None if i == k else f"x{i}"
+                out.append(final(subj, i) if obj is None else mid(subj, i, obj))
+                subj = obj
+            return " . ".join(out) + " ?"
+
+        return [
+            steps(lambda s, i: f"the {{r{i}:frel}} of {s} is who", lambda s, i, o: f"the {{r{i}:frel}} of {s} is {o}"),
+            steps(lambda s, i: f"{s} has who as its {{r{i}:frel}}", lambda s, i, o: f"{s} has {o} as its {{r{i}:frel}}"),
+            steps(lambda s, i: f"who is the {{r{i}:frel}} of {s}", lambda s, i, o: f"{o} is the {{r{i}:frel}} of {s}"),
+        ]

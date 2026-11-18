@@ -855,3 +855,69 @@ numbers are test_iid unless marked "4–6 hops" (test_length). Mean (sd) over 3 
   | context (curriculum, S) | 1.00 | **1.00** |
 
   The "disagree" stratum is the clean test of reading the KB or the context.
+
+### Fact format × question format, and depth (in progress)
+
+**Hypothesis (depth vs length).**
+- A nested chain query ("the r2 of the r1 of e") must be resolved within one
+  forward pass at the answer position, so each hop uses up layers.
+- A step-by-step query (`( r1 e ?x1 ) ( r2 ?x1 ? )`) spreads the hops over token
+  positions, one hop per step: sequence length used as computation, as in
+  chain-of-thought.
+- Predictions: with nested queries, the longest solvable chain should grow with the
+  number of layers. With step-by-step queries it should depend much less on depth.
+
+**Design.**
+- Grid: fact format (prose / symbolic / triples) × question format (nested /
+  step-by-step):
+
+  | facts \ questions | nested | step-by-step |
+  |---|---|---|
+  | prose | `prose` | `prose_flat` |
+  | symbolic | `symbolic` | `symbolic_flat` |
+  | triples | `triples_nested` | `triples` |
+
+  `prose_flat` and `triples_nested` are new (`encoders/prose.py`,
+  `encoders/triples.py`). They differ from their base encoding only in chain
+  queries; the test suite checks this.
+- Depth: symbolic vs symbolic_flat (identical facts) at 2 / 4 / 6 / 8 layers,
+  parameter-matched at 7.6–8.4M (2×560, 4×384, 6×320, 8×288; head dim 64–72),
+  3 seeds each (`runs/depth_ctx/`).
+- Everything else fixed: M-size budget 150M tokens, lr 1e-4, weight decay 0.1,
+  rename = nodes, 10-epoch distractor ramp, world v2.
+
+**Reporting** (`uv run python -m train.analysis "<glob>" ...`).
+- Skill acquisition is bimodal across seeds, so the report gives per condition:
+  the fraction of seeds that acquire each skill, the token count at acquisition,
+  per-hop chain accuracy and the longest chain solved at ≥ 50%.
+- It also flags failed seeds that are still rising at the end of the budget.
+- Fisher exact tests via `train.analysis.fisher`.
+
+**Sanity checks (all passed).**
+- **Prose booleans are a fallback, not slow learning.** In each seed prose answers
+  one constant ("no" in 4 seeds, "yes" in 1) to 91–100% of isa/trans queries. The
+  test sets are balanced (majority-class baseline .50–.52).
+- **Answer position is comparable.** Every format ends the prompt with `<|ans|>`,
+  has a single answer token and 2 loss positions.
+- **No step-by-step leakage.** In ~1,400 chain queries per format (all 7 formats),
+  the start entity is the only entity in the query. Intermediates appear only as
+  placeholders (`?x1`, `x1`), never as given entities.
+- **Binning.** The 4–6-hop test sets are identical across all runs (1,388 / 1,262
+  / 1,177 chain queries per hop). Trans length queries are exactly 50/50.
+
+**Early observations (from the 150M grid runs).**
+- **Truncation is real.** Acquisitions often happen late (110–140M of 150M), and
+  several failed seeds are still rising at the end (symbolic trans: both failures;
+  prose trans: 3 of 5). Final comparisons need a longer budget, or a check that
+  conclusions hold at one.
+- **Longest chain solved at ≥ 50%:**
+  - symbolic: exactly 3 in every seed, i.e. the training maximum;
+  - symbolic_flat: 3–6 (6 in 3/5 seeds);
+  - triples: 6 in 3/3.
+- **Within-prose control.** Prose writes one in three chain queries in execution
+  order ("start at e and follow r1 then r2"). On 4–6 hops that phrasing beats the
+  nested phrasings in all 5 seeds (.16 vs .13, .13 vs .10, .45 vs .26, .14 vs .08,
+  .18 vs .10; sign test p ≈ .03).
+  - The gain is small compared with fact-shaped steps with explicit placeholders
+    (symbolic .05 → symbolic_flat .45–.59).
+  - Execution order alone helps a little; per-hop slots help much more.

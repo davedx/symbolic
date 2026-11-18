@@ -32,9 +32,9 @@ from world.kb import World
 from world.queries import Query
 
 from .base import ANS, BOS, CTX, EOS, PROOF, QUERY, Encoder, stable_int
-from .prose import ProseEncoder
+from .prose import ProseEncoder, ProseFlatEncoder
 from .symbolic import SymbolicEncoder, SymbolicFlatEncoder
-from .triples import TriplesEncoder, TriplesUnmarkedEncoder
+from .triples import TriplesEncoder, TriplesNestedEncoder, TriplesUnmarkedEncoder
 
 ENCODERS = {
     "prose": ProseEncoder,
@@ -42,6 +42,8 @@ ENCODERS = {
     "triples": TriplesEncoder,
     "symbolic_flat": SymbolicFlatEncoder,  # ablation: decomposed chain queries
     "triples_unmarked": TriplesUnmarkedEncoder,  # ablation: no role markers
+    "prose_flat": ProseFlatEncoder,  # grid: prose facts, step-by-step chain queries
+    "triples_nested": TriplesNestedEncoder,  # grid: triples facts, nested chain queries
 }
 
 
