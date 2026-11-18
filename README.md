@@ -986,32 +986,33 @@ phrasing each; 3 seeds):
 - Test: `symbolic_path` (`? ( r3 r2 r1 e )`: same outermost-first order, one
   bracket pair), 3 seeds (`runs/grid_ctx/symbolic_path_*`).
 
-**Depth sweep, near-complete** (14/18 runs; parameter-matched ~8M; lr 1e-4 and wd
-0.1 fixed, tuned at the L6 shape). Longest chain solved at ≥ 50%, per seed:
+**Depth sweep, complete** (parameter-matched ~8M; lr 1e-4 and wd 0.1 fixed, tuned at
+the L6 shape). Each cell gives the seeds with longest chain ≥ 4 (beyond training),
+then the longest chain per seed:
 
 | layers | nested (`symbolic`) | step-by-step (`symbolic_flat`) |
 |---|---|---|
-| 2 | 3, 3 | 3 |
-| 4 | 2, 5, 3 | **1, 2, 1** |
-| 6 | 3, 3, 3, 3, 3 | 4, 3, 6, 6, 6 |
-| 8 | 3, 3, 3 | **5, 6** |
+| 2 | 0/3 (3, 3, 1) | 1/3 (3, 3, 4) |
+| 4 | 1/3 (2, 5, 3) | **0/3 (1, 2, 1)** |
+| 6 | 0/5 (3, 3, 3, 3, 3) | 4/5 (4, 3, 6, 6, 6) |
+| 8 | 0/3 (3, 3, 3) | **3/3 (5, 6, 6)** |
 
-- **The depth-vs-length prediction is contradicted in both arms.**
-  - Nested chains do not get longer with depth (≈ 3 at every L).
-  - Step-by-step generalization *depends* on depth: it fails at L4 (not even
-    2–3-hop chains), partly works at L6, fully at L8 (2 of 3 seeds so far).
-  - Resolving a placeholder and then looking up the next fact apparently needs
-    several layers per step, so steps are not free.
-  - Caveat: the lr was tuned at L6, so the L4 failure may be partly optimization.
-- **Prose with fixed phrasing, step-by-step:** longest chain 3, 5, 3, vs 5, 6, 4
-  nested. In prose, step-by-step does not help (if anything it hurts), so the
-  question-format effect is not universal.
-- **`symbolic_path`** (1 of 3 seeds): 4 hops .57, then .04 at 5–6 hops. One hop
-  further than nested symbolic, but no open-ended generalization. Pending.
-- **Current interpretation.**
-  - In symbolic and triples, step-by-step queries generalize beyond the training
-    length and nested ones do not.
-  - That limit is not a depth budget, and nesting as such is not the barrier
-    (fixed-phrasing nested prose generalizes).
-  - What remains is how the symbolic/triples nested *surface form* grows with chain
-    length.
+- **The depth-vs-length prediction is not supported.**
+  - Nested chains do not lengthen with depth.
+  - Step-by-step generalization is not depth-independent: it works at L6–L8 and
+    mostly fails at L2–L4.
+- **L4 step is anomalous.** It is worse than L2: chain skill not acquired in 2/3
+  seeds, 1-hop only .69–.81, all 3 seeds still rising on trans. This looks like an
+  optimization failure at that shape (lr tuned at L6), not a capacity limit. A
+  per-shape lr check would resolve it.
+- **`symbolic_path`** (`? ( r3 r2 r1 e )`, single bracket pair; n = 3): longest
+  chain 4, 3, 4, with the same cliff in every seed (4 hops ≈ .5, 5–6 hops ≈ .05).
+  - The bracket run explains at most one extra hop (vs nested 0/5: p = .11). Path
+    queries do not generalize like step-by-step (2/3 vs 4/5 ≥ 4 hops, but the cliff
+    at 5 is absent in step runs).
+  - A remaining candidate is positional: in nested and path forms, the k-th relation
+    sits at an offset from the entity never seen in training, while step-by-step
+    repeats one local pattern per hop.
+  - Against this, fixed-phrasing nested prose (relations also at growing offsets)
+    generalizes to 4–6 hops. This needs mechanistic probing (logit lens / attention
+    by position) rather than more ablations.
