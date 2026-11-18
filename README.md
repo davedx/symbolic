@@ -807,6 +807,30 @@ numbers are test_iid unless marked "4–6 hops" (test_length). Mean (sd) over 3 
   `<s> X <r> Y <o> Z` replaced by `( X Y Z )`. It keeps the S-R-O order, the
   true/false value nodes and the fact-shaped chain steps; only the role tags go.
   Runs: `runs/grid_ctx/triples_unmarked_context_M_150M_v2_s*`.
+  - **Result:** bool 2/3 (seed 2: trans .52), chain 3/3. 4–6-hop chains per seed
+    .54 / .35 / .59 (mean .49, vs .59 for triples).
+  - Role markers help a little (steadier long chains, possibly trans), but 3/3 vs
+    2/3 is not distinguishable with 3 seeds.
+  - Pooled by fact format, boolean success is **5/6** for the triples family
+    (S-R-O order, true/false as value nodes) and **1/6** for the symbolic family
+    (R-S-O order, `has` / `not ( has … )`). Fisher exact p ≈ 0.08: suggestive only.
+
+#### What we have learned about encodings so far (context regime, M, 3 seeds)
+
+1. **Chain length generalization is mostly a query-format effect.** Writing k-hop
+   chains as k fact-shaped steps in execution order takes symbolic from .05 to .45
+   on 4–6 hops; triples reaches .59. How facts are represented is a secondary
+   factor here.
+2. **Reliable acquisition of transitive reasoning tracks the triples fact format.**
+   The triples family succeeds 5/6, the symbolic family 1/6, prose about 1/5 across
+   lrs. Candidate causes: S-R-O order, or booleans stored as value nodes. Role
+   markers matter at most modestly.
+3. **Prose** reads context for chains as well as the others up to 3 hops, but rarely
+   acquires the boolean skills and does not length-generalize. Its chain queries
+   are nested (no decomposition).
+4. Each skill's acquisition is **stochastic per seed**, so claims need success
+   rates over enough seeds. Seeds 3–4 for all five encodings are running, for n = 5
+   (`runs/grid_ctx/*_s3`, `*_s4`).
 
 #### Held-out category split
 
